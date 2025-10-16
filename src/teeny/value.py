@@ -100,6 +100,8 @@ class Table(Value):
         return Number(self.value != rhs.value)
     def __len__(self) -> int:
         return self.size
+    def __call__(self, value):
+        return self.get("_call_")(value)
     
     def append(self, val: Value) -> Value:
         self.value[Number(value = self.size)] = val
