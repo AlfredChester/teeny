@@ -89,6 +89,20 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
         rhs, p = parse(tokens, p, 0)
         body, p = parse(tokens, p, 0)
         lhs = AST("FOR", [lhs, rhs, body])
+    elif tokens[p].typ == "MATCH":
+        p = advance(tokens, p, "MATCH")
+        lhs, p = parse(tokens, p, 0)
+        p = advance(tokens, p, "LSHPAREN")
+        children = []
+        while tokens[p].typ != "RSHPAREN":
+            rhs, p = parse(tokens, p, 0)
+            p = advance(tokens, p, 'COLON')
+            tr, p = parse(tokens, p, 0)
+            children.append(AST("OPT", [rhs, tr]))
+            if tokens[p].typ == "COMMA":
+                p = advance(tokens, p, "COMMA")
+        lhs = AST("MATCH", children, lhs)
+        p = advance(tokens, p, "RSHPAREN")
     elif tokens[p].typ == "FN":
         isDynamic = False
         p = advance(tokens, p, "FN")

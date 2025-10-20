@@ -102,6 +102,16 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
         for b in ast.children:
             lst = interpret(b, nEnv)
         return lst
+    elif ast.typ == "MATCH":
+        val = interpret(ast.value, env)
+        nEnv = Env(env)
+        for c in ast.children:
+            if c.typ != "OPT":
+                raise RuntimeError("OPT is the only type allowed inside a match expression")
+            lft = interpret(c.children[0], nEnv) if c.children[0].value != '_' else Number(1)
+            if isTruthy(lft == val):
+                return interpret(c.children[1], nEnv)
+        return Nil()
     elif ast.typ == "OP":
         if ast.value == "+":
             return interpret(ast.children[0], env) + interpret(ast.children[1], env)

@@ -94,10 +94,10 @@ class Table(Value):
         return Table(value = {**self.value, **rhs.value})
     def __eq__(self, rhs) -> Number:
         if not isinstance(rhs, Table): return Number(0)
-        return Number(self.value == rhs.value)
+        return Number(value = int(self.value == rhs.value))
     def __neq__(self, rhs) -> Number:
         if not isinstance(rhs, Table): return Number(1)
-        return Number(self.value != rhs.value)
+        return Number(value = int(self.value != rhs.value))
     def __len__(self) -> int:
         return self.size
     def __call__(self, value):
