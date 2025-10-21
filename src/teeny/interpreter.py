@@ -29,7 +29,7 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False):
         for c in lhs.children:
             if c.typ == "PAIR":
                 assignVariable(c.children[1], rhs.get(String(value = c.children[0].value)), env, isDeclare)
-            elif not isinstance(rhs.get(String(value = c.value)), Nil):
+            elif c.typ == "NAME" and not isinstance(rhs.get(String(value = c.value)), Nil):
                 assignVariable(c, rhs.get(String(value = c.value)), env, isDeclare)
             else:
                 assignVariable(c, rhs.get(Number(value = cnt)), env, isDeclare)
@@ -105,7 +105,7 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
         while not isinstance(v, Nil):
             p = v
             env = snapshot(curEnv)
-            assignVariable(lhs, rhs, env, True)
+            assignVariable(lhs, rhs.get(Number(value=p)), env, True)
             lst.append(interpret(ast.children[2], env))
             v = st()
         env = snapshot(curEnv)
