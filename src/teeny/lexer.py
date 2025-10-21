@@ -41,6 +41,7 @@ KEYWORDS = {
     "if": "IF",
     "then": "THEN",
     "else": "ELSE",
+    "elif": "ELIF",
     "end": "END",
     "fn": "FN",
     "while": "WHILE",

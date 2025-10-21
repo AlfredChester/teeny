@@ -69,7 +69,7 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
         lhs, p = parse(tokens, p, 0)
         rhs, p = parse(tokens, p, 0)
         children = [rhs]
-        if p >= len(tokens) or tokens[p].typ != "ELSE":
+        if p >= len(tokens) or (tokens[p].typ != "ELSE" and tokens[p].typ != "ELIF"):
             lhs = AST("IF", [lhs, *children])
         else:
             p = advance(tokens, p, "ELSE")
