@@ -3,7 +3,7 @@ import math
 from pathlib import Path
 
 Math = Table({
-    String("pi"): Number(math.pi), String("e"): Number(math.e)
+    String(value = "pi"): Number(value = math.pi), String(value = "e"): Number(value = math.e)
 })
 
 srcPath = Path(__file__).parent.parent.parent / "example"
@@ -12,8 +12,6 @@ def Import(name: String) -> Table:
     code = open(srcPath / name.value).read()
     from teeny.runner import run
     res = run(code)
-    # res.get("export")
-    # print(res)
     return res.get("export")
 
 def Mix(table: Table, env: Env):
@@ -25,11 +23,11 @@ def makeGlobal() -> Env:
     gEnv = Env()
     gEnv.update({
         "math": Math,
-        "print": BuiltinClosure(lambda *x: print(*x, sep = '', end = '')),
-        "input": BuiltinClosure(lambda: input("")),
-        "export": Table({}),
-        "import": BuiltinClosure(Import),
-        "mix": BuiltinClosure(Mix, True),
-        "include": BuiltinClosure(lambda name, env: Mix(Import(name), env), True)
+        "print": BuiltinClosure(fn = lambda *x: print(*x, sep = '', end = '')),
+        "input": BuiltinClosure(fn = lambda: input("")),
+        "export": Table(value = {}),
+        "import": BuiltinClosure(fn = Import),
+        "mix": BuiltinClosure(fn = Mix, hasEnv = True),
+        "include": BuiltinClosure(fn = lambda name, env: Mix(Import(name), env), hasEnv = True)
     })
     return gEnv
