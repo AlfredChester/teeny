@@ -3,6 +3,38 @@ from teeny.value import Value, Number, String, Table, Closure, Nil, Env, Builtin
 from teeny.glob import makeGlobal
 from teeny.exception import RuntimeError
 
+def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False):
+    if lhs.typ != "TABLE":
+        if lhs.typ == "NAME":
+            if isDeclare:
+                env.define(lhs.value, rhs)
+            else:
+                env.write(lhs.value, rhs)
+        elif lhs.value == ".":
+            l = interpret(lhs.children[0], env)
+            r = String(value = lhs.children[1].value)
+            if isDeclare:
+                l.define(r, rhs)
+            else:
+                l.set(r, rhs)
+        elif lhs.value == "[]":
+            l = interpret(lhs.children[0], env)
+            r = interpret(lhs.children[1], env)
+            if isDeclare:
+                l.define(r, rhs)
+            else:
+                l.set(r, rhs)
+    else:
+        cnt: int = 0
+        for c in lhs.children:
+            if c.typ == "PAIR":
+                assignVariable(c.children[1], rhs.get(String(value = c.children[0].value)), env, isDeclare)
+            elif not isinstance(rhs.get(String(value = c.value)), Nil):
+                assignVariable(c, rhs.get(String(value = c.value)), env, isDeclare)
+            else:
+                assignVariable(c, rhs.get(Number(value = cnt)), env, isDeclare)
+                cnt += 1
+
 def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
     if ast.typ == "NUMBER":
         return Number(value = int(ast.value))
@@ -72,26 +104,8 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
         v = st()
         while not isinstance(v, Nil):
             p = v
-            print(p)
             env = snapshot(curEnv)
-            if lhs.typ == "NAME":
-                name = lhs.value
-                val = rhs.get(Number(value = p))
-                env.define(name, val)
-            else:
-                children = lhs.children
-                val = rhs.get(Number(value = p))
-                if not isinstance(val, Table):
-                    raise RuntimeError("Expect Table at the right side of table-binding")
-                cnt = 0
-                for c in children:
-                    if val.get(String(value = c.value)) != None:
-                        env.define(c.value, val.get(String(value = c.value)))
-                    else:
-                        if val.size <= cnt:
-                            raise RuntimeError("Too few items inside the right side of table-binding")
-                        env.define(c.value, val.get(Number(value = cnt)))
-                        cnt += 1
+            assignVariable(lhs, rhs, env, True)
             lst.append(interpret(ast.children[2], env))
             v = st()
         env = snapshot(curEnv)
@@ -141,48 +155,13 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
             return interpret(ast.children[0], env) <= interpret(ast.children[1], env)
         if ast.value == ":=":
             # The left is guarenteed a name or a Table
-            val = None
-            lhs = None
-            if ast.children[0].typ == 'NAME':
-                lhs = ast.children[0].value
-                val = interpret(ast.children[1], env)
-                env.define(lhs, val)
-            else:
-                lhs = ast.children[0].children
-                val = interpret(ast.children[1], env)
-                if not isinstance(val, Table):
-                    raise RuntimeError("Expect Table at the right side of table-binding")
-                cnt = 0
-                for c in lhs:
-                    if val.get(String(value = c.value)) != None:
-                        env.define(c.value, val.get(String(value = c.value)))
-                    else:
-                        if val.size <= cnt:
-                            raise RuntimeError("Too few items inside the right side of table-binding")
-                        env.define(c.value, val.get(Number(value = cnt)))
-                        cnt += 1
+            val = interpret(ast.children[1], env)
+            assignVariable(ast.children[0], val, env, True)
             return val
         if ast.value == "=":
             # The left is guarenteed a name or a Table
-            val = None
-            if ast.children[0].typ == 'NAME':
-                lhs = ast.children[0].value
-                val = interpret(ast.children[1], env)
-                env.write(lhs, val)
-            else:
-                lhs = ast.children[0].children
-                val = interpret(ast.children[1], env)
-                if not isinstance(val, Table):
-                    raise RuntimeError("Expect Table at the right side of table-binding")
-                cnt = 0
-                for c in lhs:
-                    if val.get(String(value = c.value)) != None:
-                        env.write(c.value, val.get(String(value = c.value)))
-                    else:
-                        if val.size <= cnt:
-                            raise RuntimeError("Too few items inside the right side of table-binding")
-                        env.write(c.value, val.get(Number(value = cnt)))
-                        cnt += 1
+            val = interpret(ast.children[1], env)
+            assignVariable(ast.children[0], val, env, False)
             return val
         if ast.value == ".":
             lhs = interpret(ast.children[0], env)
@@ -191,29 +170,6 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
             lhs = interpret(ast.children[0], env)
             rhs = interpret(ast.children[1], env)
             return lhs.get(rhs)
-        if ast.value == "[]=":
-            lhs = interpret(ast.children[0], env)
-            rhs = interpret(ast.children[1], env)
-            val = interpret(ast.children[2], env)
-            lhs.set(rhs, val)
-            return val
-        if ast.value == "[]:=":
-            lhs = interpret(ast.children[0], env)
-            rhs = interpret(ast.children[1], env)
-            val = interpret(ast.children[2], env)
-            lhs.define(rhs, val)
-            return val
-        if ast.value == ".=":
-            lhs = interpret(ast.children[0], env)
-            rhs = String(value = ast.children[1].value)
-            val = interpret(ast.children[2], env)
-            lhs.set(rhs, val)
-        if ast.value == ".:=":
-            lhs = interpret(ast.children[0], env)
-            rhs = String(value = ast.children[1].value)
-            val = interpret(ast.children[2], env)
-            lhs.define(rhs, val)
-            return val
     elif ast.typ == "PREOP":
         if ast.value == "+":
             return interpret(ast.children[0], env)
