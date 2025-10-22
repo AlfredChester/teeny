@@ -116,6 +116,12 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
                 p = advance(tokens, p, "COMMA")
         lhs = AST("MATCH", children, lhs)
         p = advance(tokens, p, "RSHPAREN")
+    elif tokens[p].typ == "TRY":
+        p = advance(tokens, p, "TRY")
+        lhs, p = parse(tokens, p, 0)
+        p = advance(tokens, p, "CATCH")
+        rhs, p = parse(tokens, p, 0)
+        lhs = AST("TRY", [lhs, rhs])
     elif tokens[p].typ == "FN":
         isDynamic = False
         p = advance(tokens, p, "FN")
@@ -150,7 +156,8 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             or op.typ == "RPAREN" or op.typ == "RSQPAREN" or op.typ == "RSHPAREN" or op.typ == "LSHPAREN" \
             or op.typ == "COMMA" or op.typ == "COLON" or op.typ == "IF" or op.typ == "FN" \
             or op.typ == "WHILE" or op.typ == "THEN" or op.typ == "END" or op.typ == "ELSE" \
-            or op.typ == "ELIF" or op.typ == "FOR" or op.typ == "IN" or op.typ == "SEMI":
+            or op.typ == "TRY" or op.typ == "CATCH" or op.typ == "ELIF" or op.typ == "FOR" \
+            or op.typ == "IN" or op.typ == "SEMI":
             break
         op = op.value
 

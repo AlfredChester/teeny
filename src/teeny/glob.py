@@ -1,4 +1,4 @@
-from teeny.value import Env, Number, String, Table, BuiltinClosure
+from teeny.value import Env, Number, String, Table, Error, BuiltinClosure
 import math
 from pathlib import Path
 
@@ -28,6 +28,7 @@ def makeGlobal() -> Env:
         "export": Table(value = {}),
         "import": BuiltinClosure(fn = Import),
         "mix": BuiltinClosure(fn = Mix, hasEnv = True),
-        "include": BuiltinClosure(fn = lambda name, env: Mix(Import(name), env), hasEnv = True)
+        "include": BuiltinClosure(fn = lambda name, env: Mix(Import(name), env), hasEnv = True),
+        "panic": BuiltinClosure(fn = lambda message: Error({}, "RuntimeError", message))
     })
     return gEnv

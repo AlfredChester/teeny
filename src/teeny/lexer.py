@@ -47,7 +47,9 @@ KEYWORDS = {
     "while": "WHILE",
     "for": "FOR",
     "in": "IN",
-    "match": "MATCH"
+    "match": "MATCH",
+    "try": "TRY",
+    "catch": "CATCH"
 }
 MASTER_RE = re.compile("|".join(f"(?P<{k}>{p})" for k, p in TOKENS))
 

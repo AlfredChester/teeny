@@ -186,17 +186,26 @@ class Closure:
         if not isinstance(rhs, Closure): return True
         return self.params != rhs.params or self.implementation != rhs.implementation
 
-    def __call__(self, value):
+    def __call__(self, value, insideCatch = False):
         nEnv = self.env
         nEnv.update(zip(self.params, value))
         lst = None
         for ast in self.implementation:
             from teeny.interpreter import interpret
-            lst = interpret(ast, nEnv)
+            lst = interpret(ast, nEnv, insideCatch)
         return lst
 
 @dataclass
-class Nil:
+class Error(Value):
+    typ: str = ""
+    value: str = ""
+
+    def __post_init__(self):
+        self.register(String(value = "type"), String(value = self.typ))
+        self.register(String(value = "value"), String(value = self.value))
+
+@dataclass
+class Nil(Value):
     pass
 
 @dataclass
