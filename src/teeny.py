@@ -10,7 +10,7 @@ def readFromExample(name):
 rhs = None; p = 0
 while True:
     try:
-        rhs, p = parse(tokenize(readFromExample("expr")), p)
+        rhs, p = parse(tokenize(readFromExample("fileSystem")), p)
         # print(process(rhs))
         print(interpret(process(rhs)))
     except LexicalError as e:
@@ -23,5 +23,5 @@ while True:
         print(e)
         break
     # print(rhs)
-    if p >= len(tokenize(readFromExample("expr"))):
+    if p >= len(tokenize(readFromExample("fileSystem"))):
         break

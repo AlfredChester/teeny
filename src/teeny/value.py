@@ -250,3 +250,37 @@ def isTruthy(value: Value):
         return False
     elif isinstance(value, BuiltinValue):
         return isTruthy(value.value)
+
+def makeTable(value: list | dict | str | int | bool) -> Value:
+    if isinstance(value, int): return Number(value = value)
+    elif isinstance(value, str): return String(value = value)
+    elif isinstance(value, bool): return Number(value = int(value))
+    elif isinstance(value, list):
+        res = Table({})
+        for item in value:
+            res.append(makeTable(item))
+        return res
+    elif isinstance(value, dict):
+        res = Table({})
+        for item in value.keys():
+            res.define(makeTable(item), makeTable(value.get(item)))
+        return res
+
+def makeObject(value: Value) -> list | dict | str | int | bool:
+    if isinstance(value, Number): return value.value
+    elif isinstance(value, String): return value.value
+    elif isinstance(value, Table):
+        isList = True
+        for i in value.value.keys():
+            if not isinstance(i, Number):
+                isList = False
+        if isList:
+            res = []
+            for i in value.value.values():
+                res.append(makeObject(i))
+            return res
+        else:
+            res = {}
+            for i in value.value.keys():
+                res.update({makeObject(i): makeObject(value.value.get(i))})
+            return res
