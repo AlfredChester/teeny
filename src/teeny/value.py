@@ -100,7 +100,7 @@ class Table(Value):
         return Number(value = int(self.value != rhs.value))
     def __len__(self) -> int:
         return self.size
-    def __call__(self, value):
+    def __call__(self, value, kwarg):
         return self.get(String(value = "_call_"))(value)
     
     def append(self, val: Value) -> Value:
@@ -134,6 +134,12 @@ class Table(Value):
         res = Table()
         for k in self.value.keys():
             res.append(Table(value = {Number(value = 0): k, Number(value = 1): self.value[k]}, size = 2))
+        return res
+    def toList(self):
+        res = []
+        for k in self.value.keys():
+            if isinstance(k, int):
+                res.append(self.value.get(k))
         return res
     def _iter_(self):
         # Default iterative protocol
@@ -186,7 +192,7 @@ class Closure:
         if not isinstance(rhs, Closure): return True
         return self.params != rhs.params or self.implementation != rhs.implementation
 
-    def __call__(self, value, insideCatch = False):
+    def __call__(self, value, kwarg):
         nEnv = self.env
         nEnv.update(zip(self.params, value))
         lst = None
@@ -222,8 +228,8 @@ class BuiltinClosure(Value):
     fn: Callable = lambda: 0
     hasEnv: bool = False
 
-    def __call__(self, value):
-        return self.fn(*value)
+    def __call__(self, value: list, kwarg: dict):
+        return self.fn(*value, **kwarg)
 
 @dataclass
 class BuiltinValue(Value):

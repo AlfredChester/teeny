@@ -172,9 +172,15 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             elif op == '(':
                 children = []
                 while tokens[p].typ != "RPAREN":
-                    rhs, p = parse(tokens, p, 0)
-                    children.append(rhs)
+                    if tokens[p].typ == "NAME" and tokens[p + 1].typ == "ASSIGN":
+                        rhs = AST("NAME", [], tokens[p].value)
+                        p += 2
+                        val, p = parse(tokens, p, 0)
+                        rhs = AST("KWARG", [rhs, val])
+                    else:
+                        rhs, p = parse(tokens, p, 0)
                     if tokens[p].typ == "COMMA": p += 1
+                    children.append(rhs)
                 p += 1
                 lhs = AST("CALL", [lhs, *children])
             else:

@@ -39,7 +39,7 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
     if ast.typ == "NUMBER":
         return Number(value = int(ast.value))
     if ast.typ == "STRING":
-        return String(value = str(ast.value)[1:-1])
+        return String(value = (str(ast.value)[1:-1]))
     elif ast.typ == "NAME":
         if ast.value == "nil":
             return Nil()
@@ -74,14 +74,21 @@ def interpret(ast: AST, env: Env = makeGlobal()) -> Value:
         value = interpret(ast.children[0], env)
         if isinstance(value, Error): return value
         params = ast.children[1:]
+        kwArg = {}
+        par = []
         for pos, p in enumerate(params):
-            val = interpret(p, env)
-            if isinstance(val, Error): return val
-            params[pos] = interpret(p, env)
+            if p.typ != "KWARG":
+                val = interpret(p, env)
+                if isinstance(val, Error): return val
+                par.append(val)
+            else:
+                lhs = p.children[0]; rhs = p.children[1]
+                val = interpret(rhs, env)
+                kwArg[lhs.value] = val
         if isinstance(value, BuiltinClosure):
             if value.hasEnv:
-                return value([*params, env])
-        return value(params)
+                return value([*par, env], kwArg)
+        return value(par, kwArg)
     elif ast.typ == "IF":
         value = interpret(ast.children[0], env)
         if isinstance(value, Error): return value
