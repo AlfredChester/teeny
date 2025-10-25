@@ -106,6 +106,19 @@ Fs = Table({
     String(value = "findFiles"): BuiltinClosure(fn = findFiles)
 })
 
+def encode(res: Table) -> String:
+    return String(value = json.dumps(makeObject(res)))
+def decode(res: String) -> Table:
+    return makeTable(json.loads(res.value))
+Json = Table({
+    String("encode"): BuiltinClosure(fn = encode),
+    String("stringnify"): BuiltinClosure(fn = encode),
+    String("decode"): BuiltinClosure(fn = decode),
+    String("parse"): BuiltinClosure(fn = decode),
+    String("read"): BuiltinClosure(fn = Fs.get(String(value = "readJson"))),
+    String("write"): BuiltinClosure(fn = Fs.get(String(value = "writeJson")))
+})
+
 def Import(name: String) -> Table:
     code = open(srcPath / name.value).read()
     from teeny.runner import run
@@ -128,6 +141,7 @@ def makeGlobal() -> Env:
         "mix": BuiltinClosure(fn = Mix, hasEnv = True),
         "include": BuiltinClosure(fn = lambda name, env: Mix(Import(name), env), hasEnv = True),
         "error": Err,
-        "fs": Fs
+        "fs": Fs,
+        "json": Json
     })
     return gEnv
