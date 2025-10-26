@@ -7,11 +7,47 @@ import os
 import shutil
 import requests
 import sys
+import random
 
 srcPath = Path(__file__).parent.parent.parent / "example"
 
 Math = Table(value = {
-    String(value = "pi"): Number(value = math.pi), String(value = "e"): Number(value = math.e)
+    String(value = "pi"): Number(value = math.pi), String(value = "e"): Number(value = math.e),
+    String(value = "tau"): Number(value = math.tau),
+    String(value = "abs"): BuiltinClosure(fn = lambda x: Number(value = abs(x.value))),
+    String(value = "floor"): BuiltinClosure(fn = lambda x: Number(value = math.floor(x.value))),
+    String(value = "ceil"): BuiltinClosure(fn = lambda x: Number(value = math.ceil(x.value))),
+    String(value = "round"): BuiltinClosure(fn = lambda x: Number(value = math.round(x.value))),
+    String(value = "trunc"): BuiltinClosure(fn = lambda x: Number(value = math.trunc(x.value))),
+    String(value = "min"): BuiltinClosure(fn = lambda a, b: Number(value = min(a, b))),
+    String(value = "max"): BuiltinClosure(fn = lambda a, b: Number(value = max(a, b))),
+    String(value = "sign"): BuiltinClosure(fn = lambda x: Number(value = math.copysign(1, x.value))),
+    String(value = "sin"): BuiltinClosure(fn = lambda x: Number(value = math.sin(x.value))),
+    String(value = "cos"): BuiltinClosure(fn = lambda x: Number(value = math.cos(x.value))),
+    String(value = "tan"): BuiltinClosure(fn = lambda x: Number(value = math.tan(x.value))),
+    String(value = "asin"): BuiltinClosure(fn = lambda x: Number(value = math.asin(x.value))),
+    String(value = "acos"): BuiltinClosure(fn = lambda x: Number(value = math.acos(x.value))),
+    String(value = "atan"): BuiltinClosure(fn = lambda x: Number(value = math.atan(x.value))),
+    String(value = "atan2"): BuiltinClosure(fn = lambda x, y: Number(value = math.atan2(x.value, y.value))),
+    String(value = "degrees"): BuiltinClosure(fn = lambda x: Number(value = math.degrees(x.value))),
+    String(value = "radians"): BuiltinClosure(fn = lambda x: Number(value = math.radians(x.value))),
+    String(value = "exp"): BuiltinClosure(fn = lambda x: Number(value = math.exp(x.value))),
+    String(value = "pow"): BuiltinClosure(fn = lambda x, y: Number(value = math.pow(x.value, y.value))),
+    String(value = "log"): BuiltinClosure(fn = lambda x, b = Number(value = math.e): Number(value = math.log(x.value, b.value))),
+    String(value = "log10"): BuiltinClosure(fn = lambda x: Number(value = math.log10(x.value))),
+    String(value = "log2"): BuiltinClosure(fn = lambda x: Number(value = math.log2(x.value))),
+    String(value = "hypot"): BuiltinClosure(fn = lambda *x: Number(value = math.hypot(*[i.value for i in x]))),
+    String(value = "random"): BuiltinClosure(fn = lambda: Number(value = random.random())),
+    String(value = "uniform"): BuiltinClosure(fn = lambda a, b: Number(value = random.uniform(a.value, b.value))),
+    String(value = "randint"): BuiltinClosure(fn = lambda a, b: Number(value = random.randint(a.value, b.value))),
+    String(value = "clamp"): BuiltinClosure(fn = lambda a, mmin, mmax: Number(value = max(mmin, min(a, mmax)))),
+    String(value = "lerp"): BuiltinClosure(fn = lambda a, b, t: a + (b - a) * t),
+    String(value = "eq"): BuiltinClosure(fn = lambda a, b: a == b),
+    String(value = "lt"): BuiltinClosure(fn = lambda a, b: a < b),
+    String(value = "gt"): BuiltinClosure(fn = lambda a, b: a > b),
+    String(value = "le"): BuiltinClosure(fn = lambda a, b: a <= b),
+    String(value = "ge"): BuiltinClosure(fn = lambda a, b: a >= b),
+    String(value = "neq"): BuiltinClosure(fn = lambda a, b: a != b),
 })
 Err = Table(value = {
     String(value = "_call_"): BuiltinClosure(fn = lambda typ, message: ValError(typ = typ, value = message)),
