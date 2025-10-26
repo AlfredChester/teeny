@@ -141,6 +141,10 @@ class Table(Value):
             if isinstance(k, int):
                 res.append(self.value.get(k))
         return res
+    def sum(self):
+        return sum(self.toList())
+    def mean(self):
+        return sum(self.toList()) / len(self.toList())
     def _iter_(self):
         # Default iterative protocol
         cur = 0
@@ -195,6 +199,7 @@ class Closure:
     def __call__(self, value, kwarg):
         nEnv = self.env
         nEnv.update(zip(self.params, value))
+        nEnv.update(kwarg)
         lst = None
         for ast in self.implementation:
             from teeny.interpreter import interpret
