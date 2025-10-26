@@ -5,13 +5,14 @@ from pathlib import Path
 import json
 import os
 import shutil
+import requests
 
 srcPath = Path(__file__).parent.parent.parent / "example"
 
-Math = Table({
+Math = Table(value = {
     String(value = "pi"): Number(value = math.pi), String(value = "e"): Number(value = math.e)
 })
-Err = Table({
+Err = Table(value = {
     String(value = "_call_"): BuiltinClosure(fn = lambda typ, message: ValError(typ = typ, value = message)),
     String(value = "panic"): BuiltinClosure(fn = lambda err: Error({}, err.typ, err.value)),
     String(value = "raise"): BuiltinClosure(fn = lambda typ, message: Error({}, typ, message))
@@ -86,7 +87,7 @@ def findFiles(path: String, check: Value) -> Table:
     for item in lis:
         res.append(String(value = item))
     return res
-Fs = Table({
+Fs = Table(value = {
     String(value = "readText"): BuiltinClosure(fn = lambda path: read(path, False)),
     String(value = "writeText"): BuiltinClosure(fn = lambda path, content, append = Number(0): write(path, content, False, append = append)),
     String(value = "readJson"): BuiltinClosure(fn = lambda path: read(path, True)),
@@ -110,13 +111,34 @@ def encode(res: Table) -> String:
     return String(value = json.dumps(makeObject(res)))
 def decode(res: String) -> Table:
     return makeTable(json.loads(res.value))
-Json = Table({
-    String("encode"): BuiltinClosure(fn = encode),
-    String("stringnify"): BuiltinClosure(fn = encode),
-    String("decode"): BuiltinClosure(fn = decode),
-    String("parse"): BuiltinClosure(fn = decode),
-    String("read"): BuiltinClosure(fn = Fs.get(String(value = "readJson"))),
-    String("write"): BuiltinClosure(fn = Fs.get(String(value = "writeJson")))
+Json = Table(value = {
+    String(value = "encode"): BuiltinClosure(fn = encode),
+    String(value = "stringnify"): BuiltinClosure(fn = encode),
+    String(value = "decode"): BuiltinClosure(fn = decode),
+    String(value = "parse"): BuiltinClosure(fn = decode),
+    String(value = "read"): BuiltinClosure(fn = Fs.get(String(value = "readJson"))),
+    String(value = "write"): BuiltinClosure(fn = Fs.get(String(value = "writeJson")))
+})
+
+def HTTPGet(url: String, params = Nil()):
+    urlString: str = url.value
+    r = requests.get(urlString, makeObject(params))
+    return Table(value = {
+        String(value = "status"): Number(value = r.status_code),
+        String(value = "headers"): makeTable(dict(r.headers)),
+        String(value = "content"): String(value = r.text)
+    })
+def HTTPPost(url: String, data: Table):
+    urlString = url.value
+    r = requests.post(urlString, json = makeObject(data))
+    return Table(value = {
+        String(value = "status"): Number(value = r.status_code),
+        String(value = "headers"): makeTable(dict(r.headers)),
+        String(value = "content"): String(value = r.text)
+    })
+Http = Table(value = {
+    String(value = "get"): BuiltinClosure(fn = HTTPGet),
+    String(value = "post"): BuiltinClosure(fn = HTTPPost)
 })
 
 def Import(name: String) -> Table:
@@ -142,6 +164,7 @@ def makeGlobal() -> Env:
         "include": BuiltinClosure(fn = lambda name, env: Mix(Import(name), env), hasEnv = True),
         "error": Err,
         "fs": Fs,
-        "json": Json
+        "json": Json,
+        "http": Http
     })
     return gEnv

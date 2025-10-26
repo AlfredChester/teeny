@@ -272,7 +272,7 @@ def makeTable(value: list | dict | str | int | bool) -> Value:
             res.define(makeTable(item), makeTable(value.get(item)))
         return res
 
-def makeObject(value: Value) -> list | dict | str | int | bool:
+def makeObject(value: Value) -> list | dict | str | int | bool | None:
     if isinstance(value, Number): return value.value
     elif isinstance(value, String): return value.value
     elif isinstance(value, Table):
@@ -290,3 +290,5 @@ def makeObject(value: Value) -> list | dict | str | int | bool:
             for i in value.value.keys():
                 res.update({makeObject(i): makeObject(value.value.get(i))})
             return res
+    elif isinstance(value, Nil):
+        return None
