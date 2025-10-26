@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import requests
+import sys
 
 srcPath = Path(__file__).parent.parent.parent / "example"
 
@@ -166,6 +167,7 @@ def makeGlobal() -> Env:
         "error": Err,
         "fs": Fs,
         "json": Json,
-        "http": Http
+        "http": Http,
+        "argv": sys.argv[1:]
     })
     return gEnv
