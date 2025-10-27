@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Callable
 from teeny.AST import AST
 from teeny.exception import RuntimeError
+import math
 
 @dataclass
 class Value:
@@ -88,6 +89,11 @@ class Table(Value):
         self.register(String(value = "keys"), BuiltinClosure(fn = self.keys))
         self.register(String(value = "values"), BuiltinClosure(fn = self.values))
         self.register(String(value = "pairs"), BuiltinClosure(fn = self.pairs))
+        self.register(String(value = "mean"), BuiltinClosure(fn = lambda: makeTable(self.mean())))
+        self.register(String(value = "sum"), BuiltinClosure(fn = lambda: makeTable(self.sum())))
+        self.register(String(value = "median"), BuiltinClosure(fn = lambda: makeTable(self.median())))
+        self.register(String(value = "stdev"), BuiltinClosure(fn = lambda: makeTable(self.stdev())))
+        self.register(String(value = "describe"), BuiltinClosure(fn = lambda: makeTable(self.describe())))
         self.register(String(value = "_iter_"), BuiltinClosure(fn = self._iter_))
 
     def __add__(self, rhs: "Table") -> "Table":
@@ -141,10 +147,30 @@ class Table(Value):
             if isinstance(k, int):
                 res.append(self.value.get(k))
         return res
-    def sum(self):
+    def sum(self) -> float:
         return sum(self.toList())
-    def mean(self):
+    def mean(self) -> float:
         return sum(self.toList()) / len(self.toList())
+    def median(self) -> float:
+        lis = self.toList()
+        lis.sort()
+        if len(lis) % 2 == 1:
+            return lis[len(lis) // 2]
+        else:
+            return (lis[len(lis) // 2] + lis[len(lis) // 2 - 1]) / 2
+    def stdev(self) -> float:
+        avg = self.mean()
+        arr = list(map(lambda x: (x - avg) ** 2,self.toList()))
+        return math.sqrt(sum(arr) / len(arr))
+    def describe(self):
+        return {
+            "sum": self.sum(),
+            "mean": self.mean(),
+            "median": self.median(),
+            "stdev": self.stdev()
+        }
+    def sort(self) -> None:
+        pass
     def _iter_(self):
         # Default iterative protocol
         cur = 0
@@ -266,10 +292,11 @@ def isTruthy(value: Value):
     elif isinstance(value, BuiltinValue):
         return isTruthy(value.value)
 
-def makeTable(value: list | dict | str | int | bool) -> Value:
+def makeTable(value: list | dict | str | int | bool | float | None) -> Value:
     if isinstance(value, int): return Number(value = value)
     elif isinstance(value, str): return String(value = value)
     elif isinstance(value, bool): return Number(value = int(value))
+    elif isinstance(value, float): return Number(value = value)
     elif isinstance(value, list):
         res = Table({})
         for item in value:
@@ -280,6 +307,8 @@ def makeTable(value: list | dict | str | int | bool) -> Value:
         for item in value.keys():
             res.define(makeTable(item), makeTable(value.get(item)))
         return res
+    elif value == None:
+        return Nil()
 
 def makeObject(value: Value) -> list | dict | str | int | bool | None:
     if isinstance(value, Number): return value.value
