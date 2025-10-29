@@ -53,6 +53,7 @@ def main():
                     raise SyntaxError(f"Parser made no progress at token index {pos}")
                 value = interpret(process(ast))
                 print(makeObject(value))
+        sys.exit(0)
     run_file(sys.argv[1], print_each=True)
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import requests
 import sys
 import random
 import subprocess
+import time
 
 srcPath = Path(sys.argv[1] if len(sys.argv) >= 2 else __file__).parent
 
@@ -188,6 +189,11 @@ Os = Table(value = {
     String(value = "setEnv"): BuiltinClosure(fn = lambda name, val: os.setenv(name.value, val.value))
 })
 
+Time = Table(value = {
+    String(value = "now"): BuiltinClosure(fn = lambda: Number(value = time.time())),
+    String(value = "sleep"): BuiltinClosure(fn = lambda t: [time.sleep(t.value), Nil()][-1])
+})
+
 def Import(name: String) -> Table:
     code = open(srcPath / name.value).read()
     from teeny.runner import run
@@ -223,6 +229,7 @@ def makeGlobal() -> Env:
         "json": Json,
         "http": Http,
         "os": Os,
+        "time": Time,
         "argv": sys.argv[1:],
         "type": BuiltinClosure(fn = getType),
         "copy": BuiltinClosure(fn = copy)
