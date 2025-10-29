@@ -39,8 +39,20 @@ def run_file(path: str, print_each: bool = True):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: teeny <file.ty>")
-        sys.exit(1)
+        while True:
+            src = input("teeny> ")
+            if src == ":exit":
+                break
+            tokens = tokenize(src)
+            pos = 0
+            while pos < len(tokens):
+                before = pos
+                ast, pos = parse(tokens, pos)
+                if pos == before:
+                    # Defensive: avoid infinite loop on bad parser progress
+                    raise SyntaxError(f"Parser made no progress at token index {pos}")
+                value = interpret(process(ast))
+                print(makeObject(value))
     run_file(sys.argv[1], print_each=True)
 
 if __name__ == "__main__":

@@ -38,10 +38,10 @@ class Number(Value):
     def __mod__(self, rhs) -> "Number":
         return Number(value = self.value % rhs.value)
     def __eq__(self, rhs) -> "Number":
-        if not isinstance(rhs, Number): return Number(0)
+        if not isinstance(rhs, Number): return Number(value = 0)
         return Number(value = int(self.value == rhs.value))
     def __neq__(self, rhs) -> "Number":
-        if not isinstance(rhs, Number): return Number(1)
+        if not isinstance(rhs, Number): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
     def __gt__(self, rhs) -> "Number":
         return Number(value = int(self.value > rhs.value))

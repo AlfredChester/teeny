@@ -10,7 +10,7 @@ import sys
 import random
 import subprocess
 
-srcPath = Path(sys.argv[1]).parent
+srcPath = Path(sys.argv[1] if len(sys.argv) >= 2 else __file__).parent
 
 Math = Table(value = {
     String(value = "pi"): Number(value = math.pi), String(value = "e"): Number(value = math.e),
