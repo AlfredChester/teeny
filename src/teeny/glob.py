@@ -10,6 +10,7 @@ import sys
 import random
 import subprocess
 import time
+import functools
 
 srcPath = Path(sys.argv[1] if len(sys.argv) >= 2 else __file__).parent
 
@@ -194,6 +195,16 @@ Time = Table(value = {
     String(value = "sleep"): BuiltinClosure(fn = lambda t: [time.sleep(t.value), Nil()][-1])
 })
 
+def compose2(f, g):
+    return lambda *a, **kw: f([g([*a], kw)], {})
+def Compose(*args):
+    return BuiltinClosure(fn = functools.reduce(compose2, args))
+def Pipe(*args):
+    pass
+Func = Table(value = {
+    String(value = "compose"): BuiltinClosure(fn = Compose)
+})
+
 def Import(name: String) -> Table:
     code = open(srcPath / name.value).read()
     from teeny.runner import run
@@ -231,6 +242,7 @@ def makeGlobal() -> Env:
         "os": Os,
         "time": Time,
         "argv": sys.argv[1:],
+        "func": Func,
         "type": BuiltinClosure(fn = getType),
         "copy": BuiltinClosure(fn = copy)
     })

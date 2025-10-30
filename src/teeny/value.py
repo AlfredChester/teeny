@@ -234,6 +234,13 @@ class Table(Value):
             return Number(value = 1)
         else:
             return Number(value = 0)
+    def lPair(self) -> "Table":
+        l = self.toList()
+        res = Table()
+        for pos, i in enumerate(l):
+            if i < len(l) - 1:
+                res.append([i, l[pos + 1]])
+        return res
     def _iter_(self):
         # Default iterative protocol
         cur = 0
