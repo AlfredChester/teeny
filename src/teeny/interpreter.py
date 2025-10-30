@@ -67,10 +67,26 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                 value.append(val)
         return value
     elif ast.typ == "FN":
-        value = Closure(ast.value, ast.children, Env(outer = env), False)
+        res = []
+        for v in ast.value:
+            if isinstance(v, list):
+                val = interpret(v[1], env)
+                if isinstance(val, Error): return val
+                res.append([v[0], val])
+            else:
+                res.append(v[0])
+        value = Closure(res, ast.children, Env(outer = env), False)
         return value
     elif ast.typ == "FN-DYNAMIC":
-        value = Closure(ast.value, ast.children, Env(outer = env), True)
+        res = []
+        for v in ast.value:
+            if isinstance(v, list):
+                val = interpret(v[1], env)
+                if isinstance(val, Error): return val
+                res.append([v[0], val])
+            else:
+                res.append(v[0])
+        value = Closure(res, ast.children, Env(outer = env), True)
         return value
     elif ast.typ == "CALL":
         value = interpret(ast.children[0], env)

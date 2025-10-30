@@ -269,12 +269,21 @@ class Env(dict):
 @dataclass
 class Closure:
     params: list[str] = field(default_factory = list)
+    default: dict[str: Value] = field(default_factory = dict)
     implementation: list[AST] = field(default_factory = list)
     env: "Env" = field(default_factory = Env)
     isDynamic: bool = False
 
     def __init__(self, params, implementation, env, isDynamic):
-        self.params = params; self.implementation = implementation; self.env = snapshot(env) if not isDynamic else env;
+        self.params = []
+        self.default = {}
+        for item in params:
+            if isinstance(item, list):
+                self.params.append(item[0])
+                self.default[item[0]] = item[1]
+            else:
+                self.params.append(item)
+        self.implementation = implementation; self.env = snapshot(env) if not isDynamic else env;
         self.isDynamic = isDynamic
         self.env.update({"this": self})
 
@@ -287,7 +296,8 @@ class Closure:
 
     def __call__(self, value, kwarg):
         nEnv = self.env
-        nEnv.update(zip(self.params, value))
+        nEnv.update(self.default)
+        nEnv.update(zip(self.params[0:len(value)], value))
         nEnv.update(kwarg)
         lst = None
         for ast in self.implementation:
