@@ -43,7 +43,14 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
     if ast.typ == "NUMBER":
         return Number(value = int(ast.value))
     if ast.typ == "STRING":
-        return String(value = (str(ast.value)[1:-1]))
+        if ast.value != None:
+            return String(value = (str(ast.value)[1:-1]))
+        else:
+            res = String(value = "")
+            for c in ast.children:
+                val = interpret(c, env)
+                res = res + val
+            return res
     elif ast.typ == "NAME":
         if ast.value == "nil":
             return Nil()

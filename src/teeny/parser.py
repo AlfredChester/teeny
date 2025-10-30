@@ -36,11 +36,17 @@ def advance(tokens: list[Token], p: int, expectedTyp: str | list[str]):
 def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
     while tokens[p].typ == "SEMI": p += 1
     lhs = None
-    if tokens[p].typ == "NUMBER" or tokens[p].typ == "NAME" or tokens[p].typ == "STRING":
+    if tokens[p].typ == "NUMBER" or tokens[p].typ == "NAME":
         lhs = AST("NUMBER" 
                   if tokens[p].typ == "NUMBER" 
-                  else ("NAME" if tokens[p].typ == "NAME" else "STRING"), [], tokens[p].value)
+                  else "NAME", [], tokens[p].value)
         p += 1
+    elif tokens[p].typ == "STRING":
+        children = []
+        while p < len(tokens) and tokens[p].typ == "STRING":
+            children.append(AST("STRING", [], tokens[p].value))
+            p += 1
+        lhs = AST("STRING", children)
     elif tokens[p].typ == "LPAREN":
         p = advance(tokens, p, "LPAREN")
         nowPos = p
