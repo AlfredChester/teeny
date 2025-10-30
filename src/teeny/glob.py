@@ -42,7 +42,7 @@ Math = Table(value = {
     String(value = "random"): BuiltinClosure(fn = lambda: Number(value = random.random())),
     String(value = "uniform"): BuiltinClosure(fn = lambda a, b: Number(value = random.uniform(a.value, b.value))),
     String(value = "randint"): BuiltinClosure(fn = lambda a, b: Number(value = random.randint(a.value, b.value))),
-    String(value = "clamp"): BuiltinClosure(fn = lambda a, mmin, mmax: Number(value = max(mmin, min(a, mmax)))),
+    String(value = "clamp"): BuiltinClosure(fn = lambda a, mmin, mmax: max(mmin, min(a, mmax))),
     String(value = "lerp"): BuiltinClosure(fn = lambda a, b, t: a + (b - a) * t),
     String(value = "eq"): BuiltinClosure(fn = lambda a, b: a == b),
     String(value = "lt"): BuiltinClosure(fn = lambda a, b: a < b),

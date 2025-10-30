@@ -394,6 +394,8 @@ def makeObject(value: Value) -> list | dict | str | int | bool | None:
             return res
     elif isinstance(value, Nil):
         return None
+    elif isinstance(value, Closure):
+        return "Closure"
 def match(l: Value, r: Value) -> bool:
     if isinstance(l, Underscore):
         return True

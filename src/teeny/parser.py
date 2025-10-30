@@ -11,12 +11,12 @@ def infixOperators(op) -> list[int]:
         '+': [11, 12], '-': [11, 12],
         '*': [13, 14], '/': [13, 14], '%': [13, 14],
         '.': [20, 19]
-    }[op]
+    }.get(op)
 
 def prefixOperators(op) -> int:
     return {
         '+': 15, '-': 15, '!': 15, '%': 15
-    }[op]
+    }.get(op)
 
 def suffixOperators(op) -> int:
     return {
@@ -43,8 +43,32 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
         p += 1
     elif tokens[p].typ == "LPAREN":
         p = advance(tokens, p, "LPAREN")
-        lhs, p = parse(tokens, p, 0)
+        nowPos = p
+        res = 1
+        p -= 1
+        while res:
+            p += 1
+            if tokens[p].typ == "RPAREN":
+                res -= 1
+            elif tokens[p].typ == "LPAREN":
+                res += 1
         p = advance(tokens, p, "RPAREN")
+        if p < len(tokens) and tokens[p].typ == "ARROW":
+            p = nowPos
+            params = []
+            while tokens[p].typ != "RPAREN":
+                params.append(tokens[p].value)
+                p += 1
+                if tokens[p].typ == "COMMA": p += 1
+            p = advance(tokens, p, "RPAREN")
+            p = advance(tokens, p, "ARROW")
+            rhs, p = parse(tokens, p, 0)
+            children = [rhs]
+            lhs = AST("FN", children, params)
+        else:
+            p = nowPos
+            lhs, p = parse(tokens, p, 0)
+            p = advance(tokens, p, "RPAREN")
     elif tokens[p].typ == "LSHPAREN":
         p = advance(tokens, p, "LSHPAREN")
         children = []
