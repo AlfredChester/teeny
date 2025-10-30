@@ -3,27 +3,30 @@ from teeny.value import Value, Number, String, Table, Closure, Nil, Env, Error, 
 from teeny.glob import makeGlobal
 from teeny.exception import RuntimeError
 
-def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False):
+def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defAssign: bool = False):
     if lhs.typ != "TABLE":
         if lhs.typ == "NAME":
             if isDeclare:
                 env.define(lhs.value, rhs)
             else:
-                env.write(lhs.value, rhs)
+                if not defAssign or (isinstance(env.read(lhs.value), Nil) or env.read(lhs.value) == None):
+                    env.write(lhs.value, rhs)
         elif lhs.value == ".":
             l = interpret(lhs.children[0], env)
             r = String(value = lhs.children[1].value)
             if isDeclare:
                 l.define(r, rhs)
             else:
-                l.set(r, rhs)
+                if not defAssign or (isinstance(l.get(r), Nil) or l.get(r) == None):
+                    l.set(r, rhs)
         elif lhs.value == "[]":
             l = interpret(lhs.children[0], env)
             r = interpret(lhs.children[1], env)
             if isDeclare:
                 l.define(r, rhs)
             else:
-                l.set(r, rhs)
+                if not defAssign or (isinstance(l.get(r), Nil) or l.get(r) == None):
+                    l.set(r, rhs)
     else:
         cnt: int = 0
         for c in lhs.children:
@@ -227,6 +230,12 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             val = interpret(ast.children[1], env)
             if isinstance(val, Error): return val
             assignVariable(ast.children[0], val, env, False)
+            return val
+        if ast.value == "?=":
+            # The left is guarenteed a name or a Table
+            val = interpret(ast.children[1], env)
+            if isinstance(val, Error): return val
+            assignVariable(ast.children[0], val, env, False, True)
             return val
         if ast.value == ".":
             lhs = interpret(ast.children[0], env)
