@@ -216,9 +216,9 @@ def measureMultiple(fn: Value, runs: Number):
     for _ in range(runs.value):
         tm.append(measure(fn))
     return Table(value = {
-        String("mean"): statistics.mean(tm),
-        String("max"): max(tm),
-        String("min"): min(tm)
+        String(value = "mean"): Number(value = statistics.mean(list(map(lambda item: item.value, tm)))),
+        String(value = "max"): Number(value = max(list(map(lambda item: item.value, tm)))),
+        String(value = "min"): Number(value = min(list(map(lambda item: item.value, tm))))
     })
 Benchmark = Table(value = {
     String(value = "measure"): BuiltinClosure(fn = measure),

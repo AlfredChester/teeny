@@ -258,11 +258,11 @@ class Table(Value):
             if i < len(l) - 1:
                 res.append([i, l[pos + 1]])
         return res
-    def _iter_(self):
+    def _iter_(self, val = [], kw = {}):
         # Default iterative protocol
         cur = 0
         end = self.size
-        def nxt():
+        def nxt(val = [], kw = {}):
             nonlocal cur
             if cur < end:
                 cur += 1
