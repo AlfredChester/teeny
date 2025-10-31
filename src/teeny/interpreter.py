@@ -132,7 +132,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         value = interpret(ast.children[0], env)
         if isinstance(value, Error): return value
         if isTruthy(value):
-            return interpret(ast.children[1])
+            return interpret(ast.children[1], env)
         for c in ast.children[2:]:
             if c.typ == "ELIF":
                 value = interpret(c.children[0], env)
@@ -140,7 +140,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                 if isTruthy(value):
                     return interpret(c.children[1], env)
         if ast.children[-1].typ == "ELSE":
-            return interpret(ast.children[-1].children[0])
+            return interpret(ast.children[-1].children[0], env)
         return Nil()
     elif ast.typ == "WHILE":
         res = Nil()
@@ -181,13 +181,14 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             if isinstance(lst, Error): return lst
         return lst
     elif ast.typ == "MATCH":
+        nEnv = Env(env)
         val = interpret(ast.value, env)
         if isinstance(val, Error): return val
-        nEnv = Env(env)
         for c in ast.children:
             if c.typ != "OPT":
                 raise RuntimeError("OPT is the only type allowed inside a match expression")
             lft = interpret(c.children[0], nEnv)
+            # if val <= Number(value = -2): exit(0)
             if isinstance(lft, Error): return lft
             if not isinstance(lft, Closure) and not isinstance(lft, BuiltinClosure):
                 if match(lft, val):

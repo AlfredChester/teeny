@@ -22,7 +22,10 @@ def run_file(path: str, print_each: bool = True):
                 # Defensive: avoid infinite loop on bad parser progress
                 raise SyntaxError(f"Parser made no progress at token index {pos}")
 
-            value = interpret(process(ast))
+            try:
+                value = interpret(process(ast))
+            except RecursionError as e:
+                print(e)
             last_result = value
             if print_each and value is not None:
                 print(makeObject(value))

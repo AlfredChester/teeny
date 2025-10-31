@@ -1,8 +1,9 @@
-fib := (n) => {
-    if n == 1 {
-        1
-    } else {
-        this(n - 1) + 1
+fib := fn (n) {
+    match (n) {
+        1: 1,
+        2: 1,
+        _: this(n - 1) + this(n - 2)
     }
 }
-fib(3)
+
+benchmark.measure(() => fib(25))

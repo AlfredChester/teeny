@@ -306,9 +306,8 @@ class Closure:
                 self.default[item[0]] = item[1]
             else:
                 self.params.append(item)
-        self.implementation = implementation; self.env = snapshot(env) if not isDynamic else env;
+        self.implementation = implementation; self.env = snapshot (env) if not isDynamic else env;
         self.isDynamic = isDynamic
-        self.env.update({"this": self})
 
     def __eq__(self, rhs):
         if not isinstance(rhs, Closure): return False
@@ -318,12 +317,14 @@ class Closure:
         return self.params != rhs.params or self.implementation != rhs.implementation
 
     def __call__(self, value, kwarg):
-        nEnv = self.env
+        nEnv = Env(outer = self.env)
         nEnv.update(self.default)
         if len(value) > len(self.params):
             value = value[0:len(self.params)]
         nEnv.update(zip(self.params[0:len(value)], value))
         nEnv.update(kwarg)
+        nEnv.define("this", self)
+        # nEnv.define("n", value[0])
         lst = None
         for ast in self.implementation:
             from teeny.interpreter import interpret
@@ -408,7 +409,7 @@ def makeTable(value: list | dict | str | int | bool | float | None) -> Value:
     elif value == None:
         return Nil()
 
-def makeObject(value: Value) -> list | dict | str | int | bool | None:
+def makeObject(value: Value | dict) -> list | dict | str | int | bool | None:
     if isinstance(value, Number): return value.value
     elif isinstance(value, String): return value.value
     elif isinstance(value, Underscore): return "_"
@@ -431,6 +432,11 @@ def makeObject(value: Value) -> list | dict | str | int | bool | None:
         return None
     elif isinstance(value, Closure):
         return "Closure"
+    elif isinstance(value, dict):
+        res = {}
+        for k in value.keys():
+            res[k] = makeObject(value.get(k))
+        return res
 def match(l: Value, r: Value) -> bool:
     if isinstance(l, Underscore):
         return True
