@@ -7,6 +7,8 @@ from teeny.exception import RuntimeError
 def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defAssign: bool = False):
     if lhs.typ != "TABLE":
         if lhs.typ == "NAME":
+            if lhs.value == "_":
+                return
             if isDeclare:
                 env.define(lhs.value, rhs)
             else:
