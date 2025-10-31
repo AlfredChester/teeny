@@ -11,6 +11,7 @@ import random
 import subprocess
 import time
 import functools
+import statistics
 
 srcPath = Path(sys.argv[1] if len(sys.argv) >= 2 else __file__).parent
 
@@ -205,6 +206,25 @@ Func = Table(value = {
     String(value = "compose"): BuiltinClosure(fn = Compose)
 })
 
+def measure(fn: Value):
+    st = time.time()
+    fn([], {})
+    ed = time.time()
+    return Number(value = ed - st)
+def measureMultiple(fn: Value, runs: Number):
+    tm = []
+    for _ in range(runs.value):
+        tm.append(measure(fn))
+    return Table(value = {
+        String("mean"): statistics.mean(tm),
+        String("max"): max(tm),
+        String("min"): min(tm)
+    })
+Benchmark = Table(value = {
+    String(value = "measure"): BuiltinClosure(fn = measure),
+    String(value = "measureMul"): BuiltinClosure(fn = measureMultiple)
+})
+
 def Import(name: String) -> Table:
     code = open(srcPath / name.value).read()
     from teeny.runner import run
@@ -243,6 +263,7 @@ def makeGlobal() -> Env:
         "time": Time,
         "argv": sys.argv[1:],
         "func": Func,
+        "benchmark": Benchmark,
         "type": BuiltinClosure(fn = getType),
         "copy": BuiltinClosure(fn = copy)
     })
