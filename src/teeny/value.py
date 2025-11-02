@@ -287,7 +287,10 @@ class Env(dict):
     
     def write(self, name, val):
         if self.get(name, None) != None: self[name] = val
-        else: return self.outer.write(name, val)
+        else:
+            if self.outer == 'None':
+                raise RuntimeError(f"Can't find variable {name}, do you mean :=?")
+            return self.outer.write(name, val)
     
     def define(self, name, val):
         self.update({name: val})
