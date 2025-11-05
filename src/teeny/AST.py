@@ -1,6 +1,6 @@
 def toString(value: any):
     if isinstance(value, list):
-        return "[" + ", ".join(value) + "]"
+        return "[" + ", ".join([toString(v) for v in value]) + "]"
     return str(value)
 
 class AST:

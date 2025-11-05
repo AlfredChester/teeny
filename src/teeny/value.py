@@ -3,6 +3,29 @@ from typing import Optional, Callable
 from teeny.AST import AST
 from teeny.exception import RuntimeError
 import math
+import functools
+
+def requireType(message: str):
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            hints = func.__annotations__
+            for name, hint in hints.items():
+                if name == 'return':
+                    continue
+                value = kwargs.get(name, None)
+                if value is None and name in func.__code__.co_varnames:
+                    idx = func.__code__.co_varnames.index(name)
+                    if idx < len(args):
+                        value = args[idx]
+                if isinstance(hint, str):
+                    hint = globals().get(hint)
+                if not isinstance(value, hint):
+                    return Error(typ = "Runtime Error", value = message)
+            return func(*args, **kwargs)
+        return inner
+    return decorator
+
 
 @dataclass
 class Value:
@@ -13,9 +36,9 @@ class Value:
     def get(self, pos: "Value") -> "Value":
         return self.metaTable.get(pos, Nil())
 
-    def __and__(self, rhs) -> "Number":
+    def __and__(self, rhs: "Value") -> "Number":
         return Number(isTruthy(self) and isTruthy(rhs))
-    def __or__(self, rhs) -> "Number":
+    def __or__(self, rhs: "Value") -> "Number":
         return Number(isTruthy(self) or isTruthy(rhs))
     def __not__(self) -> "Number":
         return Number(not isTruthy(self))
@@ -27,31 +50,42 @@ class Number(Value):
     def __post_init__(self):
         self.register(String(value = "times"), BuiltinClosure(fn = self.times))
 
-    def __add__(self, rhs) -> "Number":
+    @requireType("add a non-Number to a Number")
+    def __add__(self, rhs: "Number") -> "Number":
         return Number(value = self.value + rhs.value)
-    def __sub__(self, rhs) -> "Number":
+    @requireType("minus a non-Number from a Number")
+    def __sub__(self, rhs: "Number") -> "Number":
         return Number(value = self.value - rhs.value)
-    def __mul__(self, rhs) -> "Number":
+    @requireType("multiply a non-Number with a Number")
+    def __mul__(self, rhs: "Number") -> "Number":
         return Number(value = self.value * rhs.value)
-    def __truediv__(self, rhs) -> "Number":
+    @requireType("divide a non-Number from a Number")
+    def __truediv__(self, rhs: "Number") -> "Number":
+        if rhs.value == 0: return Error(typ = "Runtime Error", value = "divide by zero")
         return Number(value = self.value / rhs.value)
-    def __floordiv__(self, rhs) -> "Number":
+    @requireType("divide a non-Number from a Number")
+    def __floordiv__(self, rhs: "Number") -> "Number":
         return Number(value = self.value / rhs.value)
-    def __mod__(self, rhs) -> "Number":
+    @requireType("mod a non-Number from a Number")
+    def __mod__(self, rhs: "Number") -> "Number":
         return Number(value = self.value % rhs.value)
-    def __eq__(self, rhs) -> "Number":
+    def __eq__(self, rhs: Value) -> "Number":
         if not isinstance(rhs, Number): return Number(value = 0)
         return Number(value = int(self.value == rhs.value))
-    def __neq__(self, rhs) -> "Number":
+    def __ne__(self, rhs: Value) -> "Number":
         if not isinstance(rhs, Number): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
-    def __gt__(self, rhs) -> "Number":
+    @requireType("compare between non-Number and Number")
+    def __gt__(self, rhs: "Number") -> "Number":
         return Number(value = int(self.value > rhs.value))
-    def __ge__(self, rhs) -> "Number":
+    @requireType("compare between non-Number and Number")
+    def __ge__(self, rhs: "Number") -> "Number":
         return Number(value = int(self.value >= rhs.value))
-    def __lt__(self, rhs) -> "Number":
+    @requireType("compare between non-Number and Number")
+    def __lt__(self, rhs: "Number") -> "Number":
         return Number(value = int(self.value < rhs.value))
-    def __le__(self, rhs) -> "Number":
+    @requireType("compare between non-Number and Number")
+    def __le__(self, rhs: "Number") -> "Number":
         return Number(value = int(self.value <= rhs.value))
     def __hash__(self) -> int:
         return self.value.__hash__()
@@ -62,6 +96,8 @@ class Number(Value):
         return Number(value = -self.value)
     def times(self) -> "Table":
         return makeTable(range(0, self.value))
+    def fact(self) -> "Number":
+        return Number(value = math.factorial(int(self.value)))
 
 @dataclass
 class String(Value):
@@ -82,21 +118,26 @@ class String(Value):
         self.register(String(value = "join", noConstruct = True), BuiltinClosure(fn = self.join))
         self.register(String(value = "format", noConstruct = True), BuiltinClosure(fn = self.format))
 
-    def __add__(self, rhs) -> "String":
+    @requireType("add a non-String to a String")
+    def __add__(self, rhs: "String") -> "String":
         return String(value = self.value + rhs.value)
-    def __eq__(self, rhs) -> Number:
+    def __eq__(self, rhs: Value) -> Number:
         if not isinstance(rhs, String): return Number(value = 0)
         return Number(value = self.value == rhs.value)
-    def __neq__(self, rhs) -> Number:
+    def __ne__(self, rhs: Value) -> Number:
         if not isinstance(rhs, String): return Number(value = 1)
         return Number(value = self.value != rhs.value)
-    def __gt__(self, rhs) -> Number:
+    @requireType("compare between non-String and String")
+    def __gt__(self, rhs: "String") -> Number:
         return Number(value = self.value > rhs.value)
-    def __ge__(self, rhs) -> Number:
+    @requireType("compare between non-String and String")
+    def __ge__(self, rhs: "String") -> Number:
         return Number(value = self.value >= rhs.value)
-    def __lt__(self, rhs) -> Number:
+    @requireType("compare between non-String and String")
+    def __lt__(self, rhs: "String") -> Number:
         return Number(value = self.value < rhs.value)
-    def __le__(self, rhs) -> Number:
+    @requireType("compare between non-String and String")
+    def __le__(self, rhs: "String") -> Number:
         return Number(value = self.value <= rhs.value)
     def __hash__(self) -> int:
         return self.value.__hash__()
@@ -152,12 +193,13 @@ class Table(Value):
         self.register(String(value = "filter"), BuiltinClosure(fn = self.filter))
         self.register(String(value = "_iter_"), BuiltinClosure(fn = self._iter_))
 
+    @requireType("add a non-Table to a Table")
     def __add__(self, rhs: "Table") -> "Table":
         return Table(value = {**self.value, **rhs.value})
-    def __eq__(self, rhs) -> Number:
+    def __eq__(self, rhs: "Value") -> Number:
         if not isinstance(rhs, Table): return Number(value = 0)
         return Number(value = int(self.value == rhs.value))
-    def __neq__(self, rhs) -> Number:
+    def __ne__(self, rhs: "Value") -> Number:
         if not isinstance(rhs, Table): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
     def __len__(self) -> int:
@@ -282,14 +324,14 @@ class Env(dict):
             return self.get(name)
         else:
             if self.outer == None:
-                raise RuntimeError(f"Can't find variable {name}\n")
+                return Error(typ = "Runtime Error", value = f"read from non-existing variable")
             return self.outer.read(name)
     
     def write(self, name, val):
         if self.get(name, None) != None: self[name] = val
         else:
-            if self.outer == 'None':
-                raise RuntimeError(f"Can't find variable {name}, do you mean :=?")
+            if self.outer == None:
+                return Error(typ = "Runtime Error", value = f"assign to non-existing variable")
             return self.outer.write(name, val)
     
     def define(self, name, val):
@@ -317,7 +359,7 @@ class Closure:
     def __eq__(self, rhs):
         if not isinstance(rhs, Closure): return False
         return self.params == rhs.params and self.implementation == rhs.implementation
-    def __neq__(self, rhs):
+    def __ne__(self, rhs):
         if not isinstance(rhs, Closure): return True
         return self.params != rhs.params or self.implementation != rhs.implementation
 
@@ -351,12 +393,15 @@ class ValError(Value):
     value: str = ""
 
     def __post_init__(self):
-        self.register(String(value = "type"), String(value = self.typ))
-        self.register(String(value = "value"), String(value = self.value))
+        self.register(String(value = "type"), self.typ)
+        self.register(String(value = "value"), self.value)
 
 @dataclass
 class Nil(Value):
-    pass
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Nil, cls).__new__(cls)
+        return cls.instance
 
 @dataclass
 class BuiltinClosure(Value):
@@ -388,13 +433,15 @@ def isTruthy(value: Value):
     if isinstance(value, Number):
         return bool(value.value)
     elif isinstance(value, Table):
-        return len(value.value) > 0
+        return bool(len(value.value) > 0)
     elif isinstance(value, Closure) or isinstance(value, BuiltinClosure):
         return True
     elif isinstance(value, Nil):
         return False
     elif isinstance(value, BuiltinValue):
         return isTruthy(value.value)
+    else:
+        return False
 
 def makeTable(value: list | dict | str | int | bool | float | None) -> Value:
     if isinstance(value, int): return Number(value = value)
@@ -431,12 +478,14 @@ def makeObject(value: Value | dict) -> list | dict | str | int | bool | None:
         else:
             res = {}
             for i in value.value.keys():
-                res.update({makeObject(i): makeObject(value.value.get(i))})
+                res.update({str(makeObject(i)): makeObject(value.value.get(i))})
             return res
     elif isinstance(value, Nil):
         return None
     elif isinstance(value, Closure):
         return "Closure"
+    elif isinstance(value, Error):
+        return str({'type': value.typ, "value": value.value})
     elif isinstance(value, dict):
         res = {}
         for k in value.keys():

@@ -59,18 +59,27 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             elif tokens[p].typ == "LPAREN":
                 res += 1
         p = advance(tokens, p, "RPAREN")
-        if p < len(tokens) and tokens[p].typ == "ARROW":
+        if p < len(tokens) and (tokens[p].typ == "ARROW" or tokens[p].typ == "AT"):
             p = nowPos
             params = []
             while tokens[p].typ != "RPAREN":
                 params.append(tokens[p].value)
                 p += 1
+                if tokens[p].typ == "ASSIGN":
+                    p = advance(tokens, p, "ASSIGN")
+                    rhs, p = parse(tokens, p, 0)
+                    name = params.pop()
+                    params.append([name, rhs])
                 if tokens[p].typ == "COMMA": p += 1
             p = advance(tokens, p, "RPAREN")
+            isDynamic = False
+            if tokens[p].typ == "AT":
+                p = advance(tokens, p, "AT")
+                isDynamic = True
             p = advance(tokens, p, "ARROW")
             rhs, p = parse(tokens, p, 0)
             children = [rhs]
-            lhs = AST("FN", children, params)
+            lhs = AST("FN" if not isDynamic else "FN-DYNAMIC", children, params)
         else:
             p = nowPos
             lhs, p = parse(tokens, p, 0)

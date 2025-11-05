@@ -8,38 +8,56 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defA
     if lhs.typ != "TABLE":
         if lhs.typ == "NAME":
             if lhs.value == "_":
-                return
+                return Nil()
             if isDeclare:
                 env.define(lhs.value, rhs)
+                return rhs
             else:
                 if not defAssign or (isinstance(env.read(lhs.value), Nil) or env.read(lhs.value) == None):
-                    env.write(lhs.value, rhs)
+                    val = env.write(lhs.value, rhs)
+                    if isinstance(val, Error): return val
+                    return rhs
+                return env.read(lhs.value)
         elif lhs.value == ".":
             l = interpret(lhs.children[0], env)
             r = String(value = lhs.children[1].value)
             if isDeclare:
                 l.define(r, rhs)
+                return rhs
             else:
                 if not defAssign or (isinstance(l.get(r), Nil) or l.get(r) == None):
                     l.set(r, rhs)
+                    return rhs
+                return l.get(r)
         elif lhs.value == "[]":
             l = interpret(lhs.children[0], env)
             r = interpret(lhs.children[1], env)
             if isDeclare:
                 l.define(r, rhs)
+                return rhs
             else:
                 if not defAssign or (isinstance(l.get(r), Nil) or l.get(r) == None):
                     l.set(r, rhs)
+                    return rhs
+                return l.get(r)
     else:
         cnt: int = 0
+        res = Table({})
         for c in lhs.children:
             if c.typ == "PAIR":
-                assignVariable(c.children[1], rhs.get(String(value = c.children[0].value)), env, isDeclare)
+                val = assignVariable(c.children[1], rhs.get(String(value = c.children[0].value)), env, isDeclare, defAssign)
+                if isinstance(val, Error): return val
+                res.define(String(value = c.children[0].value), val)
             elif c.typ == "NAME" and not isinstance(rhs.get(String(value = c.value)), Nil):
-                assignVariable(c, rhs.get(String(value = c.value)), env, isDeclare)
+                val = assignVariable(c, rhs.get(String(value = c.value)), env, isDeclare, defAssign)
+                if isinstance(val, Error): return val
+                res.append(val)
             else:
-                assignVariable(c, rhs.get(Number(value = cnt)), env, isDeclare)
+                val = assignVariable(c, rhs.get(Number(value = cnt)), env, isDeclare, defAssign)
+                if isinstance(val, Error): return val
                 cnt += 1
+                res.append(val)
+        return res
 
 def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
     if ast.typ == "NUMBER":
@@ -159,7 +177,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         rhs = interpret(ast.children[1], env)
         if isinstance(rhs, Error): return rhs
         if not isinstance(rhs, Table):
-            raise RuntimeError("Only Table is iterrable")
+            return Error(typ = "Runtime Error", value = "iterate non-Table")
         curEnv = snapshot(env)
         lst = Table()
         st = rhs.get(String(value = "_iter_"))([], {})
@@ -186,10 +204,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         val = interpret(ast.value, env)
         if isinstance(val, Error): return val
         for c in ast.children:
-            if c.typ != "OPT":
-                raise RuntimeError("OPT is the only type allowed inside a match expression")
             lft = interpret(c.children[0], nEnv)
-            # if val <= Number(value = -2): exit(0)
             if isinstance(lft, Error): return lft
             if not isinstance(lft, Closure) and not isinstance(lft, BuiltinClosure):
                 if match(lft, val):
@@ -203,8 +218,8 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if isinstance(val, Error):
             rhs = interpret(ast.children[1], env)
             if not isinstance(rhs, (Closure, BuiltinClosure, Table)):
-                raise RuntimeError("catch expression must be callable")
-            return rhs([ValError(typ = val.typ, value = val.value)], True)
+                return Error(typ = 'Runtime Error', value = 'uncallable catch expression')
+            return rhs([ValError(typ = val.typ, value = val.value)], {})
         else:
             return val
     elif ast.typ == "OP":
@@ -219,9 +234,21 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if ast.value == "%":
             return interpret(ast.children[0], env) % interpret(ast.children[1], env)
         if ast.value == "&&":
-            return interpret(ast.children[0], env) and interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if not isTruthy(lhs):
+                return Number(value = 0)
+            elif not isTruthy(interpret(ast.children[1], env)):
+                return Number(value = 0)
+            else:
+                return Number(value = 1)
         if ast.value == "||":
-            return interpret(ast.children[0], env) or interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isTruthy(lhs):
+                return Number(value = 1)
+            elif isTruthy(interpret(ast.children[1], env)):
+                return Number(value = 1)
+            else:
+                return Number(value = 0)
         if ast.value == "==":
             return interpret(ast.children[0], env) == interpret(ast.children[1], env)
         if ast.value == "!=":
@@ -243,27 +270,26 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if ast.value == "..":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
+            if not isinstance(lhs, Number): return Error(typ = 'Runtime Error', value = 'non-Number in range operator')
             rhs = interpret(ast.children[1], env)
             if isinstance(rhs, Error): return rhs
-            return makeTable(list(range(lhs.value, rhs.value + 1)))
+            if not isinstance(rhs, Number): return Error(typ = 'Runtime Error', value = 'non-Number in range operator')
+            return makeTable(list(range(int(lhs.value), int(rhs.value) + 1)))
         if ast.value == ":=":
             # The left is guarenteed a name or a Table
             val = interpret(ast.children[1], env)
             if isinstance(val, Error): return val
-            assignVariable(ast.children[0], val, env, True)
-            return val
+            return assignVariable(ast.children[0], val, env, True)
         if ast.value == "=":
             # The left is guarenteed a name or a Table
             val = interpret(ast.children[1], env)
             if isinstance(val, Error): return val
-            assignVariable(ast.children[0], val, env, False)
-            return val
+            return assignVariable(ast.children[0], val, env, False)
         if ast.value == "?=":
             # The left is guarenteed a name or a Table
             val = interpret(ast.children[1], env)
             if isinstance(val, Error): return val
-            assignVariable(ast.children[0], val, env, False, True)
-            return val
+            return assignVariable(ast.children[0], val, env, False, True)
         if ast.value == ".":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
@@ -285,6 +311,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         elif ast.value == "-":
             return interpret(ast.children[0], env).negative()
         elif ast.value == "!":
-            return not interpret(ast.children[0], env)
-        elif ast.value == "%":
-            return Number(value = len(interpret(ast.children[0], env)))
+            return Number(value = not isTruthy(interpret(ast.children[0], env)))
+    elif ast.typ == "SUFOP":
+        if ast.value == "!":
+            return interpret(ast.children[0], env).fact()

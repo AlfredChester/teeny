@@ -6,39 +6,8 @@ from teeny.processor import process
 from teeny.interpreter import interpret
 from teeny.exception import LexicalError, SyntaxError, RuntimeError
 from teeny.value import makeObject
+from teeny.runner import run_code
 
-def run_file(path: str, print_each: bool = True):
-    try:
-        src = open(path, "r", encoding="utf-8").read()
-        tokens = tokenize(src)
-        pos = 0
-        last_result = None
-
-        while pos < len(tokens):
-            before = pos
-            ast, pos = parse(tokens, pos)  # must advance
-
-            if pos == before:
-                # Defensive: avoid infinite loop on bad parser progress
-                raise SyntaxError(f"Parser made no progress at token index {pos}")
-
-            try:
-                value = interpret(process(ast))
-            except RecursionError as e:
-                print(e)
-            last_result = value
-            if print_each and value is not None:
-                print(makeObject(value))
-
-        # If you prefer “print only the last value”, set print_each=False
-        # and print here instead:
-        if not print_each and last_result is not None:
-            print(makeObject(last_result))
-
-    except FileNotFoundError:
-        print(f"File not found: {path}")
-    except (LexicalError, SyntaxError, RuntimeError) as e:
-        print(e)
 
 def main():
     if len(sys.argv) < 2:
@@ -46,19 +15,9 @@ def main():
             src = input("teeny> ")
             if src == ":exit":
                 break
-            tokens = tokenize(src)
-            pos = 0
-            while pos < len(tokens):
-                before = pos
-                ast, pos = parse(tokens, pos)
-                # print(ast)
-                if pos == before:
-                    # Defensive: avoid infinite loop on bad parser progress
-                    raise SyntaxError(f"Parser made no progress at token index {pos}")
-                value = interpret(process(ast))
-                print(makeObject(value))
+            run_code(src, is_file = False)
         sys.exit(0)
-    run_file(sys.argv[1], print_each=True)
+    run_code(sys.argv[1], print_each=True)
 
 if __name__ == "__main__":
     main()
