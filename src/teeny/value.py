@@ -189,15 +189,14 @@ class Table(Value):
 
     @requireType("add a non-Table to a Table")
     def __add__(self, rhs: "Table") -> "Table":
-        return Table(value = {**self.value, **rhs.value})
+        l = self.toList() + rhs.toList()
+        return Table(value = {**{Number(value = pos): v for pos, v in enumerate(l)}, **self.toDict(), **rhs.toDict()}, size = len(l))
     def __eq__(self, rhs: "Value") -> Number:
         if not isinstance(rhs, Table): return Number(value = 0)
         return Number(value = int(self.value == rhs.value))
     def __ne__(self, rhs: "Value") -> Number:
         if not isinstance(rhs, Table): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
-    def __len__(self) -> int:
-        return self.size
     def __call__(self, value, kwarg):
         return self.get(String(value = "_call_"))(value)
     
