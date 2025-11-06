@@ -17,6 +17,7 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(makeObject(run_code('a := 2; while a { a = a - 1; a - 1 }', False, False, False)), -1)
     def test_for(self):
         self.assertEqual(makeObject(run_code('for i in 1 .. 3 { i * i }', False, False, False)), [1, 4, 9])
+        self.assertEqual(makeObject(run_code('for _ in 3.times() { 1 }', False, False, False)), [1, 1, 1])
         self.assertEqual(run_code('for i in 1 { i }', False, False, False), Error(typ = "Runtime Error", value = "iterate non-Table"))
     def test_match(self):
         self.assertEqual(makeObject(run_code('a := 3; match a { 1: 1, 2 : 2, _: 3 }', False, False, False)), 3)

@@ -26,7 +26,8 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defA
                 return rhs
             else:
                 if not defAssign or (isinstance(l.get(r), Nil) or l.get(r) == None):
-                    l.set(r, rhs)
+                    val = l.set(r, rhs)
+                    if isinstance(val, Error): return val
                     return rhs
                 return l.get(r)
         elif lhs.value == "[]":
@@ -37,7 +38,8 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defA
                 return rhs
             else:
                 if not defAssign or (isinstance(l.get(r), Nil) or l.get(r) == None):
-                    l.set(r, rhs)
+                    val = l.set(r, rhs)
+                    if isinstance(val, Error): return val
                     return rhs
                 return l.get(r)
     else:

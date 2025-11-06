@@ -36,13 +36,6 @@ class Value:
     def get(self, pos: "Value") -> "Value":
         return self.metaTable.get(pos, Nil())
 
-    def __and__(self, rhs: "Value") -> "Number":
-        return Number(isTruthy(self) and isTruthy(rhs))
-    def __or__(self, rhs: "Value") -> "Number":
-        return Number(isTruthy(self) or isTruthy(rhs))
-    def __not__(self) -> "Number":
-        return Number(not isTruthy(self))
-
 @dataclass
 class Number(Value):
     value: int = 0
@@ -95,7 +88,7 @@ class Number(Value):
     def negative(self) -> "Number":
         return Number(value = -self.value)
     def times(self) -> "Table":
-        return makeTable(range(0, self.value))
+        return makeTable(list(range(0, self.value)))
     def fact(self) -> "Number":
         return Number(value = math.factorial(int(self.value)))
 
@@ -144,18 +137,19 @@ class String(Value):
     
     def get(self, pos: Value):
         if isinstance(pos, Number):
-            return self.value[pos.value]
+            return String(value = self.value[pos.value])
         else:
             return super().get(pos)
     def set(self, pos: Value, val: Value):
         if not isinstance(pos, Number) or not isinstance(val, String):
-            raise RuntimeError("String is only indexable with Number")
-        self.value[pos] = val.value
+            return Error(typ = "Runtime Error", value = "index string with non-Number")
+        v = list(self.value); v[pos.value] = val.value
+        self.value = "".join(v)
     
     def len(self) -> Number:
         return Number(value = len(self.value))
     def slice(self, l: Number, r: Number) -> "String":
-        return String(value = self.value[l.value:r.value])
+        return String(value = self.value[l.value:r.value + 1])
     def find(self, sub: "String") -> Number:
         return Number(value = self.value.find(sub.value))
     def upper(self) -> "String":
@@ -165,13 +159,13 @@ class String(Value):
     def cap(self) -> "String":
         return String(value = self.value.capitalize())
     def trim(self) -> "String":
-        return String(value = self.trim())
+        return String(value = self.value.strip())
     def split(self, sep: "String") -> "Table":
         return makeTable(self.value.split(sep.value))
     def join(self, tab: "Table") -> "String":
-        return self.value.join(makeObject(tab))
+        return String(value = self.value.join(makeObject(tab)))
     def format(self, tab: "Table") -> "String":
-        return self.value.format(*tab.toList(), **tab.toDict())
+        return String(value = self.value.format(*makeObject(tab.toList()), **makeObject(tab.toDict())))
 
 @dataclass
 class Table(Value):
@@ -242,13 +236,13 @@ class Table(Value):
     def toList(self):
         res = []
         for k in self.value.keys():
-            if isinstance(k, int):
+            if isinstance(k, Number):
                 res.append(self.value.get(k))
         return res
     def toDict(self):
         res = {}
         for k in self.value.keys():
-            if not isinstance(k, int):
+            if not isinstance(k, Number):
                 res[k] = self.value.get(k)
         return res
     def map(self, fn) -> "Table":
@@ -461,7 +455,7 @@ def makeTable(value: list | dict | str | int | bool | float | None) -> Value:
     elif value == None:
         return Nil()
 
-def makeObject(value: Value | dict) -> list | dict | str | int | bool | None:
+def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | None:
     if isinstance(value, Number): return value.value
     elif isinstance(value, String): return value.value
     elif isinstance(value, Underscore): return "_"
@@ -490,6 +484,11 @@ def makeObject(value: Value | dict) -> list | dict | str | int | bool | None:
         res = {}
         for k in value.keys():
             res[k] = makeObject(value.get(k))
+        return res
+    elif isinstance(value, list):
+        res = []
+        for v in value:
+            res.append(makeObject(v))
         return res
 def match(l: Value, r: Value) -> bool:
     if isinstance(l, Underscore):
