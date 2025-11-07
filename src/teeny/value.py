@@ -184,6 +184,7 @@ class Table(Value):
         self.register(String(value = "describe"), BuiltinClosure(fn = lambda: makeTable(self.describe())))
         self.register(String(value = "has"), BuiltinClosure(fn = self.has))
         self.register(String(value = "map"), BuiltinClosure(fn = self.map))
+        self.register(String(value = "sort"), BuiltinClosure(fn = lambda: self.sort()))
         self.register(String(value = "filter"), BuiltinClosure(fn = self.filter))
         self.register(String(value = "_iter_"), BuiltinClosure(fn = self._iter_))
 
@@ -260,16 +261,16 @@ class Table(Value):
                 res.define(k, d.get(k))
         return res
     def sum(self) -> float:
-        return sum(self.toList())
+        return sum(self.toList(), Number(value = 0)).value
     def mean(self) -> float:
-        return sum(self.toList()) / len(self.toList())
+        return (sum(self.toList(), Number(value = 0)) / Number(value = len(self.toList()))).value
     def median(self) -> float:
         lis = self.toList()
         lis.sort()
         if len(lis) % 2 == 1:
-            return lis[len(lis) // 2]
+            return lis[len(lis) // 2].value
         else:
-            return (lis[len(lis) // 2] + lis[len(lis) // 2 - 1]) / 2
+            return ((lis[len(lis) // 2] + lis[len(lis) // 2 - 1]) / Number(value = 2)).value
     def stdev(self) -> float:
         avg = self.mean()
         arr = list(map(lambda x: (x - avg) ** 2,self.toList()))
@@ -281,8 +282,14 @@ class Table(Value):
             "median": self.median(),
             "stdev": self.stdev()
         }
-    def sort(self) -> None:
-        pass
+    def sort(self) -> "Table":
+        l = self.toList()
+        l.sort()
+        res = Table({})
+        res.value = self.toDict()
+        for i in l:
+            res.append(i)
+        return res
     def has(self, key: Value) -> Number:
         if not isinstance(self.get(key), Nil):
             return Number(value = 1)

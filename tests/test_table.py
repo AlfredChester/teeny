@@ -27,6 +27,12 @@ class TestTable(unittest.TestCase):
         self.assertEqual(makeObject(run_code('[a: 1, b: 2].pairs()', False, False, False)), [["a", 1], ["b", 2]])
         self.assertEqual(makeObject(run_code('[1, 2, 3].map((x) => x * x)', False, False, False)), [1, 4, 9])
         self.assertEqual(makeObject(run_code('[1, 2, 3].filter((x) => x % 2)', False, False, False)), [1, 3])
+        self.assertEqual(makeObject(run_code('[a: 1].filter((x) => x % 2)', False, False, False)), {"a": 1})
+        self.assertEqual(makeObject(run_code('[1, 2, 3].sum()', False, False, False)), 6)
+        self.assertEqual(makeObject(run_code('[1, 2, 3].mean()', False, False, False)), 2)
+        self.assertEqual(makeObject(run_code('[1, 2, 3].median()', False, False, False)), 2)
+        self.assertEqual(makeObject(run_code('[1, 2, 3, 4].median()', False, False, False)), 2.5)
+        self.assertEqual(makeObject(run_code('[1, 3, 2].sort()', False, False, False)), [1, 2, 3])
 
 if __name__ == "__main__":
     unittest.main()
