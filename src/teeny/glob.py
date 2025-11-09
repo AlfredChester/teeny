@@ -255,7 +255,8 @@ def makeGlobal() -> Env:
     gEnv.update({
         "math": Math,
         "print": BuiltinClosure(fn = Print),
-        "input": BuiltinClosure(fn = lambda: input("")),
+        "println": BuiltinClosure(fn = lambda *x: Print(*x, String(value = '\n'))),
+        "input": BuiltinClosure(fn = lambda: String(value = input(""))),
         "export": Table(value = {}),
         "import": BuiltinClosure(fn = Import),
         "mix": BuiltinClosure(fn = Mix, hasEnv = True),
