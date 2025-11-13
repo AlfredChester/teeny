@@ -20,7 +20,7 @@ if a == 1 {
 
 ### `match`
 
-`match` in teeny is very similar to switch, but it's a bit stronger, here's a typical fizzbuzz program
+`match` in teeny is very similar to `switch` in other languages, but it's a bit stronger, here's a typical fizzbuzz program:
 ```teeny
 a := 3
 match [a % 3, a % 5] {
@@ -34,8 +34,10 @@ In a nutshell, `_` matches for anything, and table will compare one item by one 
 
 ## `for` and `while`
 
-`for` and `while` are two constructs of loops in teeny. Another way to do loops is through recurence
+`for` and `while` are two constructs of loops in teeny. Another way to do loops is through recursion
 
 ### `for`
+
+`for` loop through tables, it only 
 
 ### `while`
