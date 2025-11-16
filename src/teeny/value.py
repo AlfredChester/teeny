@@ -44,8 +44,12 @@ class Value:
         return self.metaTable.get(pos, Nil())
     def toString(self) -> "String":
         return String(value = "value")
-    def toNumber(self) -> "Number":
+    def toNumber(self) -> "Error":
         return Error(typ = "Runtime Error", value = "convert non-Number to Number")
+    def fact(self) -> "Error":
+        return Error(typ = "Runtime Error", value = "calculate factorial for non-Number")
+    def negative(self) -> "Error":
+        return Error(typ = "Runtime Error", value = "calculate negative for non-Number")
 
 @dataclass
 class Number(Value):
@@ -230,7 +234,7 @@ class Table(Value):
         if not isinstance(rhs, Table): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
     def __call__(self, value, kwarg) -> Value:
-        return self.get(String(value = "_call_"))(value)
+        return self.get(String(value = "_call_"))(value, kwarg)
     
     def append(self, val: Value) -> Value:
         self.value[Number(value = self.size)] = val
@@ -575,7 +579,7 @@ def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | N
     elif isinstance(value, Closure):
         return "Closure"
     elif isinstance(value, Error) or isinstance(value, ValError):
-        return value.toString()
+        return str({"type": value.typ, "value": value.value})
     elif isinstance(value, dict):
         res = {}
         for k in value.keys():

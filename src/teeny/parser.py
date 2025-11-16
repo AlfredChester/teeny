@@ -43,9 +43,15 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
         p += 1
     elif tokens[p].typ == "STRING":
         children = []
-        while p < len(tokens) and tokens[p].typ == "STRING":
-            children.append(AST("STRING", [], tokens[p].value))
-            p += 1
+        while p < len(tokens) and (tokens[p].typ == "STRING" or tokens[p].typ == "INTE_START"):
+            if tokens[p].typ == "INTE_START":
+                p = advance(tokens, p, "INTE_START")
+                lhs, p = parse(tokens, p, 0)
+                children.append(lhs)
+                p = advance(tokens, p, "INTE_END")
+            else:
+                children.append(AST("STRING", [], tokens[p].value))
+                p += 1
         lhs = AST("STRING", children)
     elif tokens[p].typ == "LPAREN":
         p = advance(tokens, p, "LPAREN")
@@ -201,7 +207,7 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             or op.typ == "COMMA" or op.typ == "COLON" or op.typ == "IF" or op.typ == "FN" \
             or op.typ == "WHILE" or op.typ == "THEN" or op.typ == "END" or op.typ == "ELSE" \
             or op.typ == "TRY" or op.typ == "CATCH" or op.typ == "ELIF" or op.typ == "FOR" \
-            or op.typ == "IN" or op.typ == "SEMI" or op.typ == "MATCH":
+            or op.typ == "IN" or op.typ == "SEMI" or op.typ == "MATCH" or op.typ == "INTE_END":
             break
         op = op.value
 

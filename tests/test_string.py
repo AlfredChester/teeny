@@ -26,7 +26,11 @@ class TestString(unittest.TestCase):
         self.assertEqual(makeObject(run_code('"  abc   ".trim()', False, False, False)), "abc")
         self.assertEqual(makeObject(run_code('"a b c".split(" ")', False, False, False)), ["a", "b", "c"])
         self.assertEqual(makeObject(run_code('" ".join(["a", "b", "c"])', False, False, False)), "a b c")
-        self.assertEqual(makeObject(run_code('"{}".format(["a"])', False, False, False)), "a")
+    def test_string_interpolation(self):
+        self.assertEqual(makeObject(run_code('name := 1; "a{name}b"', False, False, False)), "a1b")
+        self.assertEqual(makeObject(run_code('name := 1; "a\{name\}b"', False, False, False)), "a{name}b")
+        self.assertEqual(makeObject(run_code('name := 1; "a{\'name\'}b"', False, False, False)), "anameb")
+        self.assertEqual(makeObject(run_code('name := 1; "a{\'{name}\'}b"', False, False, False)), "a1b")
 
 if __name__ == "__main__":
     unittest.main()

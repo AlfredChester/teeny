@@ -66,12 +66,12 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         return Number(value = float(ast.value))
     if ast.typ == "STRING":
         if ast.value != None:
-            return String(value = (str(ast.value)[1:-1]))
+            return String(value = (str(ast.value).replace("\\{", "{").replace("\\}", "}")))
         else:
             res = String(value = "")
             for c in ast.children:
                 val = interpret(c, env)
-                res = res + val
+                res = res + val.toString()
             return res
     elif ast.typ == "NAME":
         if ast.value == "nil":
@@ -226,15 +226,35 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             return val
     elif ast.typ == "OP":
         if ast.value == "+":
-            return interpret(ast.children[0], env) + interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs + rhs
         if ast.value == "-":
-            return interpret(ast.children[0], env) - interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs - rhs
         if ast.value == "*":
-            return interpret(ast.children[0], env) * interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs * rhs
         if ast.value == "/":
-            return interpret(ast.children[0], env) / interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs / rhs
         if ast.value == "%":
-            return interpret(ast.children[0], env) % interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs % rhs
         if ast.value == "&&":
             lhs = interpret(ast.children[0], env)
             if not isTruthy(lhs):
@@ -252,17 +272,41 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             else:
                 return Number(value = 0)
         if ast.value == "==":
-            return interpret(ast.children[0], env) == interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs == rhs
         if ast.value == "!=":
-            return interpret(ast.children[0], env) != interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs != rhs
         if ast.value == ">":
-            return interpret(ast.children[0], env) > interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs > rhs
         if ast.value == "<":
-            return interpret(ast.children[0], env) < interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs < rhs
         if ast.value == ">=":
-            return interpret(ast.children[0], env) >= interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs >= rhs
         if ast.value == "<=":
-            return interpret(ast.children[0], env) <= interpret(ast.children[1], env)
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error): return rhs
+            return lhs <= rhs
         if ast.value == "??":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
@@ -311,9 +355,15 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if ast.value == "+":
             return interpret(ast.children[0], env)
         elif ast.value == "-":
-            return interpret(ast.children[0], env).negative()
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            return lhs.negative()
         elif ast.value == "!":
-            return Number(value = not isTruthy(interpret(ast.children[0], env)))
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            return Number(value = not isTruthy(lhs))
     elif ast.typ == "SUFOP":
         if ast.value == "!":
-            return interpret(ast.children[0], env).fact()
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            return lhs.fact()
