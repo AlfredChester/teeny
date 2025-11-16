@@ -203,17 +203,16 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         return lst
     elif ast.typ == "MATCH":
         nEnv = Env(env)
-        val = interpret(ast.value, env)
+        val = None
+        if not isinstance(ast.value, list):
+            val = interpret(ast.value, env)
+        else:
+            val = interpret(ast.value[0], env)
+            assignVariable(ast.value[1], val, nEnv, True, False)
         if isinstance(val, Error): return val
         for c in ast.children:
-            lft = interpret(c.children[0], nEnv)
-            if isinstance(lft, Error): return lft
-            if not isinstance(lft, Closure) and not isinstance(lft, BuiltinClosure):
-                if match(lft, val):
-                    return interpret(c.children[1], nEnv)
-            else:
-                if isTruthy(lft([val], {})):
-                    return interpret(c.children[1], nEnv)
+            if match(c.children[0], val, nEnv):
+                return interpret(c.children[1], nEnv)
         return Nil()
     elif ast.typ == "TRY":
         val = interpret(ast.children[0], env)
@@ -367,3 +366,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
             return lhs.fact()
+        elif ast.value == "?":
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error): return lhs
+            return isTruthy(lhs)

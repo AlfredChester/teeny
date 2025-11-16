@@ -20,7 +20,7 @@ def prefixOperators(op) -> int:
 
 def suffixOperators(op) -> int:
     return {
-        '!': 17, '[': 17, '(': 17
+        '!': 17, '[': 17, '(': 17, '?': 17
     }.get(op)
 
 def advance(tokens: list[Token], p: int, expectedTyp: str | list[str]) -> int:
@@ -150,6 +150,10 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
     elif tokens[p].typ == "MATCH":
         p = advance(tokens, p, "MATCH")
         lhs, p = parse(tokens, p, 0)
+        if tokens[p].typ == "AS":
+            p = advance(tokens, p, "AS")
+            rhs, p = parse(tokens, p, 0)
+            lhs = [lhs, rhs]
         p = advance(tokens, p, "LSHPAREN")
         children = []
         while tokens[p].typ != "RSHPAREN":
@@ -207,7 +211,8 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             or op.typ == "COMMA" or op.typ == "COLON" or op.typ == "IF" or op.typ == "FN" \
             or op.typ == "WHILE" or op.typ == "THEN" or op.typ == "END" or op.typ == "ELSE" \
             or op.typ == "TRY" or op.typ == "CATCH" or op.typ == "ELIF" or op.typ == "FOR" \
-            or op.typ == "IN" or op.typ == "SEMI" or op.typ == "MATCH" or op.typ == "INTE_END":
+            or op.typ == "IN" or op.typ == "SEMI" or op.typ == "MATCH" or op.typ == "INTE_END"\
+            or op.typ == "AS":
             break
         op = op.value
 

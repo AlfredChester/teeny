@@ -52,7 +52,8 @@ KEYWORDS: dict[str: str] = {
     "in": "IN",
     "match": "MATCH",
     "try": "TRY",
-    "catch": "CATCH"
+    "catch": "CATCH",
+    "as": "AS"
 }
 MASTER_RE: re.Pattern = re.compile("|".join(f"(?P<{k}>{p})" for k, p in TOKENS))
 

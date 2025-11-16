@@ -590,17 +590,31 @@ def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | N
         for v in value:
             res.append(makeObject(v))
         return res
-def match(l: Value, r: Value) -> bool:
-    if isinstance(l, Underscore):
-        return True
-    elif isinstance(l, Number): return isTruthy(l == r)
-    elif isinstance(l, String): return isTruthy(l == r)
-    elif isinstance(l, Table):
-        if not isinstance(r, Table): return False
-        for k in l.value.keys():
-            if r.value.get(k) == None: return False
-            if not match(l.get(k), r.get(k)): return False
-        return True
+def match(l: Union[Value, AST], r: Value, env: Env) -> bool:
+    if isinstance(l, Value):
+        if isinstance(l, Underscore):
+            return True
+        elif isinstance(l, Number): return isTruthy(l == r)
+        elif isinstance(l, String): return isTruthy(l == r)
+        elif isinstance(l, Table):
+            if not isinstance(r, Table): return False
+            for k in l.value.keys():
+                if r.value.get(k) == None: return False
+                if not match(l.get(k), r.get(k), env): return False
+            return True
+    else:
+        if l.value == "||":
+            return match(l.children[0], r, env) or match(l.children[1], r, env)
+        elif l.value == "&&":
+            return match(l.children[0], r, env) and match(l.children[1], r, env)
+        elif l.value == "!":
+            return not match(l.children[0], r, env)
+        elif l.typ == "FN" or l.typ == "FN-DYNAMIC":
+            from teeny.interpreter import interpret
+            return isTruthy(interpret(l, env)([r], {}))
+        else:
+            from teeny.interpreter import interpret
+            return match(interpret(l, env), r, env)
 
 def copy(v: Value) -> Value:
     if isinstance(v, Number):
