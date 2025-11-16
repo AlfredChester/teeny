@@ -11,8 +11,10 @@ fn (a, b) a + b
 fn (a, b, c) {
     [a, b, c]
 }
+
+(x, y) => x + y
 ```
-Since a closure doesn't have name, Teeny uses `this` to refer to the closure itself, like this:
+Since a closure doesn't have name, Teeny uses `this` to refer to the closure itself(for recursion), like this:
 ```teeny
 fib = fn (a) match a {
     1: 1,
