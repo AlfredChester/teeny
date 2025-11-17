@@ -524,8 +524,10 @@ def snapshot(e: Env) -> Env:
 def isTruthy(value: Value) -> bool:
     if isinstance(value, Number):
         return bool(value.value)
-    elif isinstance(value, Table):
+    elif isinstance(value, String):
         return bool(len(value.value) > 0)
+    elif isinstance(value, Table):
+        return bool(len(value.value.keys()) > 0)
     elif isinstance(value, Closure) or isinstance(value, BuiltinClosure):
         return True
     elif isinstance(value, Nil):

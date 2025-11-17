@@ -369,4 +369,4 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         elif ast.value == "?":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
-            return isTruthy(lhs)
+            return Number(value = isTruthy(lhs))

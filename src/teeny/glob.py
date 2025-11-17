@@ -1,5 +1,5 @@
 from teeny.value import Env, Number, String, Table, Error, ValError, BuiltinClosure, \
-                        makeTable, makeObject, Value, Nil, Closure, copy
+                        makeTable, makeObject, Value, Nil, Closure, copy, isTruthy
 import math
 from pathlib import Path
 import json
@@ -304,6 +304,7 @@ def makeGlobal() -> Env:
         "copy": BuiltinClosure(fn = copy),
         "str": BuiltinClosure(fn = lambda x: x.toString()),
         "num": BuiltinClosure(fn = lambda x: x.toNumber()),
-        "table": BuiltinClosure(fn = table)
+        "table": BuiltinClosure(fn = table),
+        "bool": BuiltinClosure(fn = lambda x: isTruthy(x))
     })
     return gEnv

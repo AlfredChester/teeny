@@ -20,6 +20,7 @@ TOKENS: list[tuple[str, str]] = [
     ("ASSIGN",    r"="),
     ("DEFASSIGN", r"\?\="),
     ("QEQE",      r"\?\?"),
+    ("QE",        r"\?"),
     ("RNGLI",     r"\.\."),
     ("PLUS",      r"\+"),
     ("MINUS",     r"-"),
