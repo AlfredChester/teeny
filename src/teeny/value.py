@@ -408,7 +408,7 @@ class Closure:
                 self.default[item[0]] = item[1]
             else:
                 self.params.append(item)
-        self.implementation = implementation; self.env = snapshot(env) if not isDynamic else env;
+        self.implementation = implementation; self.env = snapshot(env) if isDynamic else env;
         self.isDynamic = isDynamic
         self.gID = str(uuid.uuid4())
 
