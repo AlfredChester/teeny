@@ -78,7 +78,10 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             return Nil()
         if ast.value == "_":
             return Underscore()
-        return env.read(ast.value)
+        val = env.read(ast.value)
+        if kwargs.get("piped") != None:
+            return val([kwargs.get("piped")], {})
+        return val
     elif ast.typ == "TABLE":
         value = Table({})
         for c in ast.children:
@@ -109,6 +112,8 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             else:
                 res.append(v)
         value = Closure(res, ast.children, Env(outer = env), False)
+        if kwargs.get("piped") != None:
+            return value([kwargs.get("piped")], {})
         return value
     elif ast.typ == "FN-DYNAMIC":
         res = []
@@ -120,6 +125,8 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             else:
                 res.append(v[0])
         value = Closure(res, ast.children, Env(outer = env), True)
+        if kwargs.get("piped") != None:
+            return value([kwargs.get("piped")], {})
         return value
     elif ast.typ == "CALL":
         value = interpret(ast.children[0], env)
