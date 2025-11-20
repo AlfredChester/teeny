@@ -29,7 +29,7 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defA
                     val = l.set(r, rhs)
                     if isinstance(val, Error): return val
                     return rhs
-                return l.get(r)
+                return l.take(r)
         elif lhs.value == "[]":
             l = interpret(lhs.children[0], env)
             r = interpret(lhs.children[1], env)
@@ -41,7 +41,7 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defA
                     val = l.set(r, rhs)
                     if isinstance(val, Error): return val
                     return rhs
-                return l.get(r)
+                return l.take(r)
     else:
         cnt: int = 0
         res = Table({})
@@ -376,13 +376,13 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if ast.value == ".":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
-            return lhs.get(String(value = ast.children[1].value))
+            return lhs.take(String(value = ast.children[1].value))
         if ast.value == "[]":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs
             rhs = interpret(ast.children[1], env)
             if isinstance(rhs, Error): return rhs
-            return lhs.get(rhs)
+            return lhs.take(rhs)
         if ast.value == "|>":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs

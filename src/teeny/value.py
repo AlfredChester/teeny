@@ -222,15 +222,44 @@ class Table(Value):
         self.register(String(value = "sort"), BuiltinClosure(fn = lambda: self.sort()))
         self.register(String(value = "filter"), BuiltinClosure(fn = self.filter))
         self.register(String(value = "_iter_"), BuiltinClosure(fn = self._iter_))
+        self.register(String(value = "set"), BuiltinClosure(fn = self.set))
+        self.register(String(value = "define"), BuiltinClosure(fn = self.define))
+        self.register(String(value = "get"), BuiltinClosure(fn = self.take))
+        self.register(String(value = "defaultGet"), BuiltinClosure(fn = self.get))
 
-    @requireType("add a non-Table to a Table")
     def __add__(self, rhs: "Table") -> "Table":
+        if self.get(String(value = "_add_")) != Nil():
+            return self.get(String(value = "_add_"))([rhs], {})
+        if not isinstance(rhs, Table):
+            return Error(typ = "Runtime Error", value = "add a non-Table to Table")
         l = self.toList() + rhs.toList()
         return Table(value = {**{Number(value = pos): v for pos, v in enumerate(l)}, **self.toDict(), **rhs.toDict()}, size = len(l))
+    def __sub__(self, rhs: Value) -> Value:
+        if self.get(String(value = "_sub_")) != Nil():
+            return self.get(String(value = "_sub_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "subtract Table with other")
+    def __mul__(self, rhs: Value) -> Value:
+        if self.get(String(value = "_mul_")) != Nil():
+            return self.get(String(value = "_mul_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "multiply Table with other")
+    def __truediv__(self, rhs: Value) -> Value:
+        if self.get(String(value = "_div_")) != Nil():
+            return self.get(String(value = "_div_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "divide Table with other")
+    def __floordiv__(self, rhs: Value) -> Value:
+        if self.get(String(value = "_floordiv_")) != Nil():
+            return self.get(String(value = "_floordiv_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "floor divide Table with other")
     def __eq__(self, rhs: "Value") -> Number:
+        if self.get(String(value = "_eq_")) != Nil():
+            return Number(value = isTruthy(self.get(String(value = "_eq_"))([rhs], {})))
         if not isinstance(rhs, Table): return Number(value = 0)
         return Number(value = int(self.value == rhs.value))
     def __ne__(self, rhs: "Value") -> Number:
+        if self.get(String(value = "_ne_")) != Nil():
+            return Number(value = isTruthy(self.get(String(value = "_ne_"))([rhs], {})))
+        elif self.get(String(value = "_eq_")) != Nil():
+            return not Number(value = isTruthy(self.get(String(value = "_eq_"))([rhs], {})))
         if not isinstance(rhs, Table): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
     def __call__(self, value, kwarg) -> Value:
@@ -247,12 +276,26 @@ class Table(Value):
         if not isinstance(res, Nil):
             return res
         return super().get(pos)
+    def take(self, pos: Value) -> Value:
+        if self.get(String(value = "_get_")) != Nil():
+            return self.get(String(value = "_get_"))([self, pos], {})
+        return self.get(pos)
     def set(self, pos: Value, val: Value) -> Value:
+        if self.get(String(value = "_set_")) != Nil():
+            val = self.get(String(value = "_set_"))([self, pos, val], {})
+            if isinstance(val, Error): return val
+            if not isTruthy(val):
+                return Nil()
         if self.value.get(pos) == None:
             return Error(typ = "Runtime Error", value = "setting non-existing property")
         self.value[pos] = val
         return val
     def define(self, pos: Value, val: Value) -> Value:
+        if self.get(String(value = "_def_")) != Nil():
+            val = self.get(String(value = "_def_"))([self, pos, val], {})
+            if isinstance(val, Error): return val
+            if not isTruthy(val):
+                return Nil()
         self.value[pos] = val
         return val
     def keys(self) -> "Table":
@@ -341,6 +384,8 @@ class Table(Value):
                 res.append(tab)
         return res
     def toString(self) -> "String":
+        if self.get(String(value = "_str_")) != Nil():
+            return self.get(String(value = "_str_"))([self], {})
         l = self.toList(); d = self.toDict()
         parts = []
         for item in l:
@@ -352,6 +397,8 @@ class Table(Value):
             parts.append(f"{ks}: {vs}")
         return String(value = "[" + ", ".join(parts) + "]")
     def toNumber(self) -> "Number":
+        if self.get(String(value = "_num_")) != Nil():
+            return self.get(String(value = "_num_"))([self], {})
         return Error(typ = "Runtime Error", value = "convert non-Number to Number")
     def _iter_(self, val = [], kw = {}) -> Callable:
         # Default iterative protocol
