@@ -7,10 +7,11 @@ def infixOperators(op) -> list[int]:
         '=': [1, 2], ':=': [1, 2], '?=': [1, 2], '|>': [1, 2],
         '||': [5, 6],
         '&&': [7, 8],
-        '==': [9, 10], '!=': [9, 10], '>': [9, 10], '<': [9, 10], '>=': [9, 10], '<=': [9, 10], '??': [9, 10], '?:': [9, 10],
+        '==': [9, 10], '!=': [9, 10], '>': [9, 10], '<': [9, 10], '=~': [9, 10], '>=': [9, 10], 
+        '<=': [9, 10], '??': [9, 10], '?:': [9, 10],
         '+': [13, 14], '-': [13, 14], '..': [13, 14],
         '*': [15, 16], '/': [15, 16], '%': [15, 16],
-        '.': [20, 19]
+        '.': [19, 20]
     }.get(op)
 
 def prefixOperators(op) -> int:
@@ -64,6 +65,9 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
                 children.append(AST("STRING", [], tokens[p].value))
                 p += 1
         lhs = AST("STRING", children)
+    elif tokens[p].typ == "REGEX":
+        lhs = AST("REGEX", [], tokens[p].value[1:-1])
+        p += 1
     elif tokens[p].typ == "LPAREN":
         p = advance(tokens, p, "LPAREN")
         nowPos = p

@@ -1,6 +1,6 @@
 from teeny.AST import AST
 from teeny.value import Value, Number, String, Table, Closure, Nil, Env, Error, ValError, BuiltinClosure, Underscore\
-    , snapshot, isTruthy, match, makeObject, makeTable
+    , snapshot, isTruthy, match, makeObject, makeTable, Regex
 from teeny.glob import makeGlobal
 from teeny.exception import RuntimeError
 
@@ -64,7 +64,7 @@ def assignVariable(lhs: AST, rhs: Value, env: Env, isDeclare: bool = False, defA
 def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
     if ast.typ == "NUMBER":
         return Number(value = float(ast.value))
-    if ast.typ == "STRING":
+    elif ast.typ == "STRING":
         if ast.value != None:
             return String(value = (str(ast.value).replace("\\{", "{").replace("\\}", "}")))
         else:
@@ -73,6 +73,8 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                 val = interpret(c, env)
                 res = res + val.toString()
             return res
+    elif ast.typ == "REGEX":
+        return Regex(value = ast.value)
     elif ast.typ == "NAME":
         if ast.value == "nil":
             return Nil()
@@ -215,7 +217,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         curEnv = snapshot(env)
         lst = Table()
         st = rhs.get(String(value = "_iter_"))([], [])
-        v = st([], [])
+        v = st()
         while not isinstance(v, Nil):
             p = v
             env = snapshot(curEnv)
@@ -223,7 +225,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             val = interpret(ast.children[2], env)
             if isinstance(val, Error): return val
             lst.append(val)
-            v = st([], [])
+            v = st()
         env = snapshot(curEnv)
         return lst
     elif ast.typ == "BLOCK":
@@ -338,6 +340,12 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             rhs = interpret(ast.children[1], env)
             if isinstance(rhs, Error): return rhs
             return lhs <= rhs
+        if ast.value == "=~":
+            lhs = interpret(ast.children[0], env)
+            if not isinstance(lhs, String): return Error("Runtime Error", "match equal on non-String")
+            rhs = interpret(ast.children[1], env)
+            if not isinstance(rhs, Regex): return Error("Runtime Error", "match equal on non-Regex")
+            return rhs.match(lhs)
         if ast.value == "??":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error): return lhs

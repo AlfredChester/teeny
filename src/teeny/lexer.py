@@ -3,45 +3,63 @@ from teeny.exception import LexicalError
 import re
 
 TOKENS: list[tuple[str, str]] = [
-    ("WS",        r"[ \t\r\n]+"),
-    ("COMMENT",   r"#.*"),
-    ("DEFINE",    r":="),
-    ("EQEQ",      r"=="),
-    ("NEQ",       r"!="),
-    ("GEQ",       r">="),
-    ("LEQ",       r"<="),
-    ("GT",        r">"),
-    ("LT",        r"<"),
-    ("ANDAND",    r"&&"),
-    ("OROR",      r"\|\|"),
-    ("NOT",       r"\!"),
-    ("PIPE",      r"\|>"),
-    ("ARROW",     r"=>"),
-    ("ASSIGN",    r"="),
-    ("DEFASSIGN", r"\?\="),
-    ("QEQE",      r"\?\?"),
-    ("QECOLON",   r"\?\:"),
-    ("SPREAD",    r"\.\.\."),
-    ("RNGLI",     r"\.\."),
-    ("PLUS",      r"\+"),
-    ("MINUS",     r"-"),
-    ("STAR",      r"\*"),
-    ("SLASH",     r"/"),
-    ("MOD",       r"%"),
-    ("LPAREN",    r"\("),
-    ("RPAREN",    r"\)"),
-    ("SEMI",      r";"),
-    ("COLON",     r":"),
-    ("COMMA",     r","),
-    ("DOT",       r"\."),
-    ("LSQPAREN",  r"\["),
-    ("RSQPAREN",  r"\]"),
-    ("LSHPAREN",  r"\{"),
-    ("RSHPAREN",  r"\}"),
-    ("AT",        r"@"),
-    ("STRING",    r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''),
-    ("NUMBER", r"(?:\d+\.(?![A-Za-z_]|\.)(?:\d*)|\.\d+|\d+)(?:[eE][+-]?\d+)?"),
-    ("NAME",      r"[A-Za-z_][A-Za-z0-9_]*"),
+    # whitespace & comment
+    ("WS",          r"[ \t\r\n]+"),
+    ("COMMENT",     r"#[^\n]*"),
+
+    # multi-character operators (MUST come before shorter ones)
+    ("DEFINE",      r":="),
+    ("EQEQ",        r"=="),
+    ("NEQ",         r"!="),
+    ("GEQ",         r">="),
+    ("LEQ",         r"<="),
+    ("MEQ",         r"=~"),
+    ("ANDAND",      r"&&"),
+    ("OROR",        r"\|\|"),
+    ("PIPE",        r"\|>"),
+    ("ARROW",       r"=>"),
+
+    ("DEFASSIGN",   r"\?\="),
+    ("QEQE",        r"\?\?"),
+    ("QECOLON",     r"\?\:"),
+
+    ("SPREAD",      r"\.\.\."),   # must be before RNGLI
+    ("RNGLI",       r"\.\."),     # must be before DOT
+
+    # single-character operators
+    ("PLUS",        r"\+"),
+    ("MINUS",       r"-"),
+    ("STAR",        r"\*"),
+    ("SLASH",       r"/"),
+    ("MOD",         r"%"),
+    ("GT",          r">"),
+    ("LT",          r"<"),
+    ("ASSIGN",      r"="),
+    ("NOT",         r"!"),
+
+    ("COLON",       r":"),
+    ("COMMA",       r","),
+    ("DOT",         r"\."),
+
+    # grouping
+    ("LPAREN",      r"\("),
+    ("RPAREN",      r"\)"),
+    ("LSQPAREN",    r"\["),
+    ("RSQPAREN",    r"\]"),
+    ("LSHPAREN",    r"\{"),
+    ("RSHPAREN",    r"\}"),
+
+    ("SEMI",        r";"),
+    ("AT",          r"@"),
+
+    # literals
+    ("REGEX",       r"`(?:\\.|[^`\\])*`"),
+
+    ("STRING",      r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\''),
+
+    ("NUMBER",      r"(?:\d+\.(?![A-Za-z_]|\.)(?:\d*)|\.\d+|\d+)(?:[eE][+-]?\d+)?"),
+
+    ("NAME",        r"[A-Za-z_][A-Za-z0-9_]*"),
 ]
 KEYWORDS: dict[str: str] = {
     "if": "IF",

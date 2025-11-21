@@ -8,6 +8,7 @@ import codecs
 import uuid
 from collections.abc import Callable
 from typing import Union
+import re
 
 def requireType(message: str) -> Callable:
     def decorator(func) -> Callable:
@@ -41,6 +42,8 @@ class Value:
     def register(self, pos: "Value", val: "Value") -> None:
         self.metaTable[pos] = val
     def get(self, pos: "Value") -> "Value":
+        return self.metaTable.get(pos, Nil())
+    def take(self, pos: "Value") -> "Value":
         return self.metaTable.get(pos, Nil())
     def toString(self) -> "String":
         return String(value = "value")
@@ -131,6 +134,7 @@ class String(Value):
         self.register(String(value = "split", noConstruct = True), BuiltinClosure(fn = self.split))
         self.register(String(value = "join", noConstruct = True), BuiltinClosure(fn = self.join))
         self.register(String(value = "format", noConstruct = True), BuiltinClosure(fn = self.format))
+        self.register(String(value = "replace", noConstruct = True), BuiltinClosure(fn = self.replace))
 
     @requireType("add a non-String to a String")
     def __add__(self, rhs: "String") -> "String":
@@ -159,7 +163,7 @@ class String(Value):
     def __hash__(self) -> int:
         return self.value.__hash__()
     
-    def get(self, pos: Value) -> Value:
+    def take(self, pos: Value) -> Value:
         if isinstance(pos, Number):
             return String(value = self.value[int(pos.value)])
         else:
@@ -200,6 +204,41 @@ class String(Value):
         except ValueError:
             res = Error(typ = "Runtime Error", value = "convert non-Number to Number")
         return res
+    def replace(self, rhs: "Regex", res: "String"):
+        try:
+            pattern = re.compile(rhs.value)
+            replaced = pattern.sub(res.value, self.value)
+        except Exception:
+            replaced = self.value
+        return String(value = replaced)
+
+@dataclass
+class Regex(Value):
+    value: str = ""
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.register(String(value = "find", noConstruct = True), BuiltinClosure(fn = self.find))
+    def match(self, rhs: String) -> Number:
+        try:
+            pattern = re.compile(self.value)
+            ok = bool(pattern.search(rhs.value))
+        except Exception:
+            ok = False
+        return Number(value = 1 if ok else 0)
+    def find(self, rhs: String) -> Value:
+        try:
+            pattern = re.compile(self.value)
+            matches = pattern.findall(rhs.value)
+            def convert(x):
+                if isinstance(x, tuple):
+                    return [convert(i) for i in x]
+                else:
+                    return x
+            cleaned = [convert(m) for m in matches]
+            return makeTable(cleaned)
+        except Exception:
+            return makeTable([])
 
 @dataclass
 class Table(Value):
@@ -329,6 +368,7 @@ class Table(Value):
         res = Table({})
         for k in self.value.keys():
             res.define(k, fn([self.value.get(k), k], {}))
+        res.size = self.size
         return res
     def filter(self, fn) -> "Table":
         res = Table({})
@@ -371,10 +411,10 @@ class Table(Value):
             res.append(i)
         return res
     def has(self, key: Value) -> Number:
-        if not isinstance(self.get(key), Nil):
-            return Number(value = 1)
-        else:
-            return Number(value = 0)
+        for k in self.value.keys():
+            if self.value.get(k) == key:
+                return Number(value = 1)
+        return Number(value = 0)
     def lPair(self) -> "Table":
         l = self.toList()
         res = Table()
@@ -404,7 +444,7 @@ class Table(Value):
         # Default iterative protocol
         cur = 0
         end = self.size
-        def nxt(val = [], kw = {}) -> Union[Number, "Nil"]:
+        def nxt(val = [], kw = []) -> Union[Number, "Nil"]:
             nonlocal cur
             if cur < end:
                 cur += 1
@@ -639,6 +679,8 @@ def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | N
         return None
     elif isinstance(value, Closure):
         return "Closure"
+    elif isinstance(value, BuiltinClosure):
+        return "Built-in Closure"
     elif isinstance(value, Error) or isinstance(value, ValError):
         return str({"type": value.typ, "value": value.value})
     elif isinstance(value, dict):
@@ -651,6 +693,8 @@ def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | N
         for v in value:
             res.append(makeObject(v))
         return res
+    else:
+        return "Unknown"
 def match(l: Union[Value, AST], r: Value, env: Env) -> bool:
     if isinstance(l, Value):
         if isinstance(l, Underscore):

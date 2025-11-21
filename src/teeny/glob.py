@@ -80,16 +80,22 @@ def read(path: String, isJson = False, lines = False) -> String | Table:
             return rs
     else:
         return makeTable(res)
-def write(path: String, content: Value, isJson = False, lines = False, append = Number(value = 0)) -> Value:
-    pth: str = srcPath / path.value
-    cont: str = (content.value if not lines else '\n'.join(content.toList()))\
-                if not isJson else json.dumps(makeObject(content))
-    num: bool = bool(append.value)
+def write(path: String, content: Value, isJson=False, lines=False, append=Number(value=0)) -> Value:
+    pth = str(srcPath / path.value)
+    if isJson:
+        cont = json.dumps(makeObject(content))
+    elif lines:
+        cont = '\n'.join(content.toList())
+    else:
+        cont = content.value.replace("\\n", "\n")
+    mode = "a" if append.value else "w"
     try:
-        open(pth, ("w" if not num else "a")).write(cont)
-    except:
-        return Error({}, "IOError", "Error when writing to file")
+        with open(pth, mode, encoding="utf8") as f:
+            f.write(cont)
+    except Exception as e:
+        return Error({}, "IOError", str(e))
     return content
+
 def exists(path: String) -> Number:
     pth: str = srcPath / path.value
     return Number(value = int(os.path.exists(pth)))
@@ -121,9 +127,9 @@ def move(src: String, dst: String) -> Nil:
 def join(table: Table) -> String:
     tab = table.toList()
     return String(value = os.path.join(tab))
-def findFiles(path: String, check: Value) -> Table:
-    pth: str = srcPath / path
-    lis = filter(check, os.listdir(pth))
+def findFiles(path: String, check: Value = BuiltinClosure(fn = lambda *args: True)) -> Table:
+    pth: str = srcPath / path.value
+    lis = filter(lambda pth: check([String(value = pth)], []), os.listdir(pth))
     res = Table({})
     for item in lis:
         res.append(String(value = item))
@@ -167,7 +173,8 @@ def HTTPGet(url: String, params = Nil(), headers = Nil()) -> Table:
     return Table(value = {
         String(value = "status"): Number(value = r.status_code),
         String(value = "headers"): makeTable(dict(r.headers)),
-        String(value = "content"): String(value = r.text)
+        String(value = "content"): String(value = r.text),
+        String(value = 'json'): makeTable(r.json())
     })
 def HTTPPost(url: String, data: Table, headers: Table | Nil = Nil()) -> Table:
     urlString = url.value
