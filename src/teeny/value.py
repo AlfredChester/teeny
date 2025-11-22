@@ -250,6 +250,7 @@ class Table(Value):
         self.register(String(value = "push"), BuiltinClosure(fn = self.append))
         self.register(String(value = "keys"), BuiltinClosure(fn = self.keys))
         self.register(String(value = "values"), BuiltinClosure(fn = self.values))
+        self.register(String(value = "enumerate"), BuiltinClosure(fn = self.enumerate))
         self.register(String(value = "pairs"), BuiltinClosure(fn = self.pairs))
         self.register(String(value = "mean"), BuiltinClosure(fn = lambda: makeTable(self.mean())))
         self.register(String(value = "sum"), BuiltinClosure(fn = lambda: makeTable(self.sum())))
@@ -440,6 +441,13 @@ class Table(Value):
         if self.get(String(value = "_num_")) != Nil():
             return self.get(String(value = "_num_"))([self], {})
         return Error(typ = "Runtime Error", value = "convert non-Number to Number")
+    def enumerate(self) -> "Table":
+        l = self.toList()
+        res = Table()
+        for pos, i in enumerate(l):
+            tab = Table({}); tab.append(Number(value = pos)); tab.append(i)
+            res.append(tab)
+        return res
     def _iter_(self, val = [], kw = {}) -> Callable:
         # Default iterative protocol
         cur = 0
@@ -462,6 +470,7 @@ class Env(dict):
             return self.get(name)
         else:
             if self.outer == None:
+                print(name)
                 return Error(typ = "Runtime Error", value = f"read from non-existing variable")
             return self.outer.read(name)
     

@@ -35,7 +35,8 @@ def advance(tokens: list[Token], p: int, expectedTyp: str | list[str]) -> int:
     return p + 1
 
 def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
-    while tokens[p].typ == "SEMI": p += 1
+    while p < len(tokens) and tokens[p].typ == "SEMI": p += 1
+    if p == len(tokens): return [None, p]
     lhs = None
     if tokens[p].typ == "NUMBER" or tokens[p].typ == "NAME":
         if p + 1 < len(tokens) and (tokens[p + 1].typ == "ARROW" or tokens[p + 1].typ == "AT"):
@@ -213,6 +214,7 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
         rhs, p = parse(tokens, p, rBp)
         lhs = AST("PREOP", [rhs], op)
     while True:
+        if p == len(tokens): break
         op = tokens[p] if p < len(tokens) else None
         if op == None: break
         if op.typ == "NAME" or op.typ == "NUMBER" or op.typ == "STRING" \

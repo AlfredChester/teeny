@@ -64,7 +64,7 @@ def read(path: String, isJson = False, lines = False) -> String | Table:
     pth: str = srcPath / path.value
     res: str = ""
     try:
-        res = open(pth, "r").read()
+        res = open(pth, "r", encoding = "utf8").read()
         if isJson:
             res = json.loads(res)
     except Exception as e:
@@ -72,7 +72,7 @@ def read(path: String, isJson = False, lines = False) -> String | Table:
         return Error({}, "IOError", "Error when reading from file")
     if not isJson:
         if not lines:
-            return String(res)
+            return String(value = res)
         else:
             rs = Table({})
             for item in res.splitlines():
@@ -185,9 +185,18 @@ def HTTPPost(url: String, data: Table, headers: Table | Nil = Nil()) -> Table:
         String(value = "content"): String(value = r.text),
         String(value = "json"): makeTable(r.json())
     })
+def HTTPPatch(url: String, data: Table, headers: Table) -> Table:
+    urlString = url.value
+    r = requests.patch(urlString, json = makeObject(data), headers = makeObject(headers))
+    return Table(value = {
+        String(value = "status"): Number(value = r.status_code),
+        String(value = "headers"): makeTable(dict(r.headers)),
+        String(value = "content"): String(value = r.text)
+    })
 Http: Table = Table(value = {
     String(value = "get"): BuiltinClosure(fn = HTTPGet),
-    String(value = "post"): BuiltinClosure(fn = HTTPPost)
+    String(value = "post"): BuiltinClosure(fn = HTTPPost),
+    String(value = "patch"): BuiltinClosure(fn = HTTPPatch)
 })
 
 def Run(command: String) -> String:
