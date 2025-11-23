@@ -233,7 +233,7 @@ Time: Table = Table(value = {
 })
 
 def compose2(f, g) -> Callable:
-    return lambda *a, **kw: f([g([*a], kw)], {})
+    return lambda *a, **kw: f([g([*a], kw)], [])
 def Compose(*args) -> Callable:
     return BuiltinClosure(fn = functools.reduce(compose2, args))
 def Pipe(*args):
@@ -244,7 +244,7 @@ Func: Table = Table(value = {
 
 def measure(fn: Value) -> Number:
     st = time.time()
-    fn([], {})
+    fn([], [])
     ed = time.time()
     return Number(value = ed - st)
 def measureMultiple(fn: Value, runs: Number) -> Table:
