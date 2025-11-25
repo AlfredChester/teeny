@@ -266,6 +266,7 @@ class Table(Value):
         self.register(String(value = "define"), BuiltinClosure(fn = self.define))
         self.register(String(value = "get"), BuiltinClosure(fn = self.take))
         self.register(String(value = "defaultGet"), BuiltinClosure(fn = self.get))
+        self.register(String(value = "len"), BuiltinClosure(fn = self.len))
 
     def __add__(self, rhs: "Table") -> "Table":
         if self.get(String(value = "_add_")) != Nil():
@@ -305,6 +306,8 @@ class Table(Value):
     def __call__(self, value, kwarg) -> Value:
         return self.get(String(value = "_call_"))(value, kwarg)
     
+    def len(self) -> Number:
+        return Number(value = self.size)
     def append(self, val: Value) -> Value:
         self.value[Number(value = self.size)] = val
         self.size += 1

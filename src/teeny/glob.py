@@ -236,8 +236,6 @@ def compose2(f, g) -> Callable:
     return lambda *a, **kw: f([g([*a], kw)], [])
 def Compose(*args) -> Callable:
     return BuiltinClosure(fn = functools.reduce(compose2, args))
-def Pipe(*args):
-    pass
 Func: Table = Table(value = {
     String(value = "compose"): BuiltinClosure(fn = Compose)
 })
@@ -318,8 +316,8 @@ def makeGlobal() -> Env:
         "benchmark": Benchmark,
         "type": BuiltinClosure(fn = getType),
         "copy": BuiltinClosure(fn = copy),
-        "str": BuiltinClosure(fn = lambda x: x.toString()),
-        "num": BuiltinClosure(fn = lambda x: x.toNumber()),
+        "string": BuiltinClosure(fn = lambda x: x.toString()),
+        "number": BuiltinClosure(fn = lambda x: x.toNumber()),
         "table": BuiltinClosure(fn = table),
         "bool": BuiltinClosure(fn = lambda x: isTruthy(x))
     })
