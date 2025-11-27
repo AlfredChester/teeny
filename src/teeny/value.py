@@ -622,6 +622,15 @@ class BuiltinValue(Value):
 class Underscore(Value):
     pass
 
+@dataclass
+class Bubble(Value):
+    typ: str = ""
+    val: Value = field(default_factory = Nil)
+    def toString(self) -> "String":
+        return super().toString()
+    def toNumber(self) -> "Number":
+        return super().toNumber()
+
 def snapshot(e: Env) -> Env:
     if e.outer == None:
         res = Env(None)

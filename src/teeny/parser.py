@@ -207,6 +207,18 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             rhs, p = parse(tokens, p, 0)
             children = [rhs]
             lhs = AST("FN", children, params)
+    elif tokens[p].typ == "RETURN":
+        p = advance(tokens, p, "RETURN")
+        lhs, p = parse(tokens, p, 0)
+        lhs = AST("RETURN", [lhs])
+    elif tokens[p].typ == "BREAK":
+        p = advance(tokens, p, "BREAK")
+        lhs, p = parse(tokens, p, 0)
+        lhs = AST("BREAK", [lhs])
+    elif tokens[p].typ == "CONTINUE":
+        p = advance(tokens, p, "CONTINUE")
+        lhs, p = parse(tokens, p, 0)
+        lhs = AST("CONTINUE", [lhs])
     else:
         op = tokens[p].value
         rBp = prefixOperators(op)
@@ -223,7 +235,7 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
             or op.typ == "WHILE" or op.typ == "THEN" or op.typ == "END" or op.typ == "ELSE" \
             or op.typ == "TRY" or op.typ == "CATCH" or op.typ == "ELIF" or op.typ == "FOR" \
             or op.typ == "IN" or op.typ == "SEMI" or op.typ == "MATCH" or op.typ == "INTE_END"\
-            or op.typ == "AS":
+            or op.typ == "AS" or op.typ == "RETURN" or op.typ == "BREAK" or op.typ == "CONTINUE":
             break
         op = op.value
 

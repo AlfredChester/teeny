@@ -1,5 +1,5 @@
 from teeny.AST import AST
-from teeny.value import Value, Number, String, Table, Closure, Nil, Env, Error, ValError, BuiltinClosure, Underscore\
+from teeny.value import Bubble, Value, Number, String, Table, Closure, Nil, Env, Error, ValError, BuiltinClosure, Underscore\
     , snapshot, isTruthy, match, makeObject, makeTable, Regex
 from teeny.glob import makeGlobal
 from teeny.exception import RuntimeError
@@ -84,6 +84,18 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if kwargs.get("piped") != None:
             return val([kwargs.get("piped")], [])
         return val
+    elif ast.typ == "RETURN":
+        val = interpret(ast.children[0], env)
+        if isinstance(val, Error) or isinstance(val, Bubble): return val
+        return Bubble(typ = "RETURN", val = val)
+    elif ast.typ == "BREAK":
+        val = interpret(ast.children[0], env)
+        if isinstance(val, Error) or isinstance(val, Bubble): return val
+        return Bubble(typ = "BREAK", val = val)
+    elif ast.typ == "CONTINUE":
+        val = interpret(ast.children[0], env)
+        if isinstance(val, Error) or isinstance(val, Bubble): return val
+        return Bubble(typ = "CONTINUE", val = val)
     elif ast.typ == "TABLE":
         value = Table({})
         for c in ast.children:
@@ -91,13 +103,13 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                 # c.children[0] is guareenteed a NAME or a VALUE
                 if c.children[0].typ == "NAME":
                     val = interpret(c.children[1], env)
-                    if isinstance(val, Error): return val
+                    if isinstance(val, Error) or isinstance(val, Bubble): return val
                     value.update({String(value = c.children[0].value): val})
                 else:
                     key = interpret(c.children[0], env)
-                    if isinstance(key, Error): return key
+                    if isinstance(key, Error) or isinstance(key, Bubble): return key
                     val = interpret(c.children[1], env)
-                    if isinstance(val, Error): return val
+                    if isinstance(val, Error) or isinstance(val, Bubble): return val
                     value.update({key: val})
             elif c.value == "...":
                 val = interpret(c.children[0], env)
@@ -106,14 +118,14 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                     return Error(typ = "Runtime Error", value = "spread operator on non-Table")
                 for k in val.value.keys():
                     v = val.get(k)
-                    if isinstance(v, Error): return v
+                    if isinstance(v, Error) or isinstance(v, Bubble): return v
                     if isinstance(k, Number):
                         value.append(v)
                     else:
                         value.update({k: v})
             else:
                 val = interpret(c, env)
-                if isinstance(val, Error): return val
+                if isinstance(val, Error) or isinstance(val, Bubble): return val
                 value.append(val)
         return value
     elif ast.typ == "FN":
@@ -121,7 +133,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         for v in ast.value:
             if isinstance(v, list):
                 val = interpret(v[1], env)
-                if isinstance(val, Error): return val
+                if isinstance(val, Error) or isinstance(val, Bubble): return val
                 res.append([v[0], val])
             else:
                 res.append(v)
@@ -134,7 +146,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         for v in ast.value:
             if isinstance(v, list):
                 val = interpret(v[1], env)
-                if isinstance(val, Error): return val
+                if isinstance(val, Error) or isinstance(val, Bubble): return val
                 res.append([v[0], val])
             else:
                 res.append(v)
@@ -144,7 +156,7 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         return value
     elif ast.typ == "CALL":
         value = interpret(ast.children[0], env)
-        if isinstance(value, Error): return value
+        if isinstance(value, Error) or isinstance(value, Bubble): return value
         piped = None
         pipedUsed = False
         if kwargs.get("piped") != None:
@@ -159,24 +171,24 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                 continue
             if p.value == "...":
                 val = interpret(p.children[0], env)
-                if isinstance(val, Error): return val
+                if isinstance(val, Error) or isinstance(val, Bubble): return val
                 if not isinstance(val, Table):
                     return Error(typ = "Runtime Error", value = "spread operator on non-Table")
                 for k in val.value.keys():
                     v = val.get(k)
-                    if isinstance(v, Error): return v
+                    if isinstance(v, Error) or isinstance(v, Bubble): return v
                     if isinstance(k, Number):
                         par.append(v)
                     else:
                         kwArg.append([k, v])
             elif p.typ != "KWARG":
                 val = interpret(p, env)
-                if isinstance(val, Error): return val
+                if isinstance(val, Error) or isinstance(val, Bubble): return val
                 par.append(val)
             else:
                 lhs = p.children[0]; rhs = p.children[1]
                 val = interpret(rhs, env)
-                if isinstance(val, Error): return val
+                if isinstance(val, Error) or isinstance(val, Bubble): return val
                 kwArg.append([lhs, val])
         if not pipedUsed and piped != None:
             par.insert(0, piped)
@@ -186,13 +198,13 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         return value(par, kwArg)
     elif ast.typ == "IF":
         value = interpret(ast.children[0], env)
-        if isinstance(value, Error): return value
+        if isinstance(value, Error) or isinstance(value, Bubble): return value
         if isTruthy(value):
             return interpret(ast.children[1], env)
         for c in ast.children[2:]:
             if c.typ == "ELIF":
                 value = interpret(c.children[0], env)
-                if isinstance(value, Error): return value
+                if isinstance(value, Error) or isinstance(value, Bubble): return value
                 if isTruthy(value):
                     return interpret(c.children[1], env)
         if ast.children[-1].typ == "ELSE":
@@ -201,17 +213,17 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
     elif ast.typ == "WHILE":
         res = Nil()
         val = interpret(ast.children[0], env)
-        if isinstance(val, Error): return val
+        if isinstance(val, Error) or isinstance(val, Bubble): return val
         while isTruthy(val):
             res = interpret(ast.children[1], env)
-            if isinstance(res, Error): return res
+            if isinstance(res, Error) or isinstance(res, Bubble): return res
             val = interpret(ast.children[0], env)
-            if isinstance(val, Error): return val
+            if isinstance(val, Error) or isinstance(val, Bubble): return val
         return res
     elif ast.typ == "FOR":
         lhs = ast.children[0]
         rhs = interpret(ast.children[1], env)
-        if isinstance(rhs, Error): return rhs
+        if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
         if not isinstance(rhs, Table):
             return Error(typ = "Runtime Error", value = "iterate non-Table")
         curEnv = snapshot(env)
@@ -223,6 +235,15 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             env = snapshot(curEnv)
             assignVariable(lhs, rhs.get(p), env, True)
             val = interpret(ast.children[2], env)
+            if isinstance(val, Bubble):
+                if val.typ == "BREAK":
+                    lst.append(val.val)
+                    break
+                elif val.typ == "CONTINUE":
+                    lst.append(val.val)
+                    v = st()
+                    continue
+                else: return val
             if isinstance(val, Error): return val
             lst.append(val)
             v = st()
@@ -233,6 +254,10 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         nEnv = Env(env)
         for b in ast.children:
             lst = interpret(b, nEnv)
+            if isinstance(lst, Bubble):
+                if lst.typ == "RETURN":
+                    return lst.val
+                return lst
             if isinstance(lst, Error): return lst
         return lst
     elif ast.typ == "MATCH":
@@ -243,13 +268,15 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         else:
             val = interpret(ast.value[0], env)
             assignVariable(ast.value[1], val, nEnv, True, False)
-        if isinstance(val, Error): return val
+        if isinstance(val, Error) or isinstance(val, Bubble): return val
         for c in ast.children:
             if match(c.children[0], val, nEnv):
                 return interpret(c.children[1], nEnv)
         return Nil()
     elif ast.typ == "TRY":
         val = interpret(ast.children[0], env)
+        if isinstance(val, Bubble):
+            return val
         if isinstance(val, Error):
             rhs = interpret(ast.children[1], env)
             if not isinstance(rhs, (Closure, BuiltinClosure, Table)):
@@ -260,33 +287,33 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
     elif ast.typ == "OP":
         if ast.value == "+":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs + rhs
         if ast.value == "-":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs - rhs
         if ast.value == "*":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs * rhs
         if ast.value == "/":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs / rhs
         if ast.value == "%":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs % rhs
         if ast.value == "&&":
             lhs = interpret(ast.children[0], env)
@@ -306,39 +333,39 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
                 return Number(value = 0)
         if ast.value == "==":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs == rhs
         if ast.value == "!=":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs != rhs
         if ast.value == ">":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs > rhs
         if ast.value == "<":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs < rhs
         if ast.value == ">=":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs >= rhs
         if ast.value == "<=":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs <= rhs
         if ast.value == "=~":
             lhs = interpret(ast.children[0], env)
@@ -348,52 +375,52 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             return rhs.match(lhs)
         if ast.value == "??":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             if not isinstance(lhs, Nil): return lhs
             rhs = interpret(ast.children[1], env)
             return rhs
         if ast.value == "?:":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             if isTruthy(lhs): return lhs
             rhs = interpret(ast.children[1], env)
             return rhs
         if ast.value == "..":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             if not isinstance(lhs, Number): return Error(typ = 'Runtime Error', value = 'non-Number in range operator')
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             if not isinstance(rhs, Number): return Error(typ = 'Runtime Error', value = 'non-Number in range operator')
             return makeTable(list(range(int(lhs.value), int(rhs.value) + 1)))
         if ast.value == ":=":
             # The left is guarenteed a name or a Table
             val = interpret(ast.children[1], env)
-            if isinstance(val, Error): return val
+            if isinstance(val, Error) or isinstance(val, Bubble): return val
             return assignVariable(ast.children[0], val, env, True)
         if ast.value == "=":
             # The left is guarenteed a name or a Table
             val = interpret(ast.children[1], env)
-            if isinstance(val, Error): return val
+            if isinstance(val, Error) or isinstance(val, Bubble): return val
             return assignVariable(ast.children[0], val, env, False)
         if ast.value == "?=":
             # The left is guarenteed a name or a Table
             val = interpret(ast.children[1], env)
-            if isinstance(val, Error): return val
+            if isinstance(val, Error) or isinstance(val, Bubble): return val
             return assignVariable(ast.children[0], val, env, False, True)
         if ast.value == ".":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             return lhs.take(String(value = ast.children[1].value))
         if ast.value == "[]":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env)
-            if isinstance(rhs, Error): return rhs
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
             return lhs.take(rhs)
         if ast.value == "|>":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env, piped = lhs)
             return rhs
     elif ast.typ == "PREOP":
@@ -401,18 +428,18 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             return interpret(ast.children[0], env)
         elif ast.value == "-":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             return lhs.negative()
         elif ast.value == "!":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             return Number(value = not isTruthy(lhs))
     elif ast.typ == "SUFOP":
         if ast.value == "!":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             return lhs.fact()
         elif ast.value == "?":
             lhs = interpret(ast.children[0], env)
-            if isinstance(lhs, Error): return lhs
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             return Number(value = isTruthy(lhs))
