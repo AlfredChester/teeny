@@ -15,6 +15,7 @@ import statistics
 from collections.abc import Callable
 
 srcPath: Path = Path(sys.argv[1] if len(sys.argv) >= 2 else __file__).parent
+globalPackagePath: Path = Path(__file__).parent.parent.parent / "lib"
 
 Math: Table = Table(value = {
     String(value = "pi"): Number(value = math.pi), String(value = "e"): Number(value = math.e),
@@ -262,10 +263,15 @@ Benchmark: Table = Table(value = {
 cachedModules = {}
 def Import(name: String) -> Table:
     pth: str = srcPath / name.value
+    gPth: str = globalPackagePath / name.value
     if not os.path.isfile(pth):
         pth = pth / "index.ty"
         if not os.path.isfile(pth):
-            return Error({}, "Import Error", f"Module '{name.value}' not found")
+            if not os.path.isfile(gPth):
+                gPth = globalPackagePath / name.value / "index.ty"
+            if not os.path.isfile(gPth):
+                return Error({}, typ = "Import Error", value = f"Module {name.value} not found")
+            pth = gPth
     if pth in cachedModules:
         return cachedModules[pth]
     code = open(pth).read()

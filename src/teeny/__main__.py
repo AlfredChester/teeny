@@ -8,7 +8,10 @@ from teeny.exception import LexicalError, SyntaxError, RuntimeError
 from teeny.value import makeObject
 from teeny.runner import run_code
 from teeny.glob import makeGlobal, getType
+from pathlib import Path
 import time
+import os
+import shutil
 
 def checkParenBalance(src):
     cnt = [0, 0, 0]
@@ -97,6 +100,18 @@ def main():
                 ed = time.time()
                 print("Time: ", ed - st, "s")
         sys.exit(0)
+    elif sys.argv[1] == "install":
+        dir = sys.argv[2] if len(sys.argv) > 2 else "."
+        if not Path(dir).is_dir():
+            print("Error: Module didn't exists or is not a folder")
+            sys.exit(1)
+        # We try to move the package to ../../lib
+        dest = Path(__file__).parent.parent.parent / "lib"
+        src = Path(dir).resolve()
+        shutil.copytree(src, dest / src.name, dirs_exist_ok = True)
+        print(f"Module {src.name} installed successfully.")
+        sys.exit(0)
+        
     run_code(sys.argv[1], print_each = True, print_res = False)
 
 if __name__ == "__main__":

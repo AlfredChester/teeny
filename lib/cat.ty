@@ -1,4 +1,4 @@
-// The cat library
+# The cat library
 
 export["nya"] := (n) => {
     for _ in n.times() {
