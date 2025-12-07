@@ -9,6 +9,8 @@ import uuid
 from collections.abc import Callable
 from typing import Union
 import re
+import importlib
+import types
 
 def requireType(message: str) -> Callable:
     def decorator(func) -> Callable:
@@ -657,7 +659,7 @@ def isTruthy(value: Value) -> bool:
     else:
         return False
 
-def makeTable(value: list | dict | str | int | bool | float | None) -> Value:
+def makeTable(value: list | dict | str | int | bool | float | None | object) -> Value:
     if isinstance(value, int): return Number(value = value)
     elif isinstance(value, str): return String(value = value)
     elif isinstance(value, bool): return Number(value = int(value))
@@ -674,6 +676,26 @@ def makeTable(value: list | dict | str | int | bool | float | None) -> Value:
         return res
     elif value == None:
         return Nil()
+    elif type(value) == types.FunctionType or type(value) == types.MethodType:
+        if type(value) == types.FunctionType:
+            res = BuiltinClosure(fn = lambda *args: makeTable(value(*[makeTable(item) for item in args])))
+        else:
+            def wrapper(*args):
+                return makeTable(value(*[makeObject(item) for item in args]))
+            res = BuiltinClosure(fn = wrapper)
+        return 
+    elif isinstance(value, type):
+        return BuiltinClosure(fn = lambda *args: makeTable(value(*[makeTable(item) for item in args])))
+    else:
+        # value is a class instance of some class
+        res = Table({})
+        for attr in dir(value):
+            if not attr.startswith("_"):
+                attr_value = getattr(value, attr)
+                if callable(attr_value):
+                    res.define(String(value = attr_value.__name__), makeTable(attr_value))
+                else: res.define(String(value = attr), makeTable(attr_value))
+        return res
 
 def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | None:
     if isinstance(value, Number):

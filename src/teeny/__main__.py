@@ -5,7 +5,7 @@ from teeny.parser import parse
 from teeny.processor import process
 from teeny.interpreter import interpret
 from teeny.exception import LexicalError, SyntaxError, RuntimeError
-from teeny.value import makeObject
+from teeny.value import makeObject, String, makeTable
 from teeny.runner import run_code
 from teeny.glob import makeGlobal, getType
 from pathlib import Path
@@ -63,7 +63,13 @@ Type \033[36m:help\033[0m for help."""
 
 def main():
     if len(sys.argv) < 2:
+        class A:
+            def __init__(self):
+                self.value = 42
+            def greet(self, name):
+                return f"Hello, {name}!"
         env = makeGlobal()
+        env.define("Example", makeTable(A()))
         print(banner)
         while True:
             src = readCode()
