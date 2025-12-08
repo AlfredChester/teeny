@@ -63,13 +63,7 @@ Type \033[36m:help\033[0m for help."""
 
 def main():
     if len(sys.argv) < 2:
-        class A:
-            def __init__(self):
-                self.value = 42
-            def greet(self, name):
-                return f"Hello, {name}!"
         env = makeGlobal()
-        env.define("Example", makeTable(A()))
         print(banner)
         while True:
             src = readCode()

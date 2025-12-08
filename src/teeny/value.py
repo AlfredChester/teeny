@@ -683,7 +683,7 @@ def makeTable(value: list | dict | str | int | bool | float | None | object) -> 
             def wrapper(*args):
                 return makeTable(value(*[makeObject(item) for item in args]))
             res = BuiltinClosure(fn = wrapper)
-        return 
+        return res
     elif isinstance(value, type):
         return BuiltinClosure(fn = lambda *args: makeTable(value(*[makeTable(item) for item in args])))
     else:
