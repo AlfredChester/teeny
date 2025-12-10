@@ -676,16 +676,26 @@ def makeTable(value: list | dict | str | int | bool | float | None | object) -> 
         return res
     elif value == None:
         return Nil()
-    elif type(value) == types.FunctionType or type(value) == types.MethodType:
+    elif type(value) == types.FunctionType or type(value) == types.MethodType or type(value) == types.BuiltinFunctionType:
         if type(value) == types.FunctionType:
-            res = BuiltinClosure(fn = lambda *args: makeTable(value(*[makeTable(item) for item in args])))
+            res = BuiltinClosure(fn = lambda *args: makeTable(value(*[makeObject(item) for item in args])))
         else:
             def wrapper(*args):
                 return makeTable(value(*[makeObject(item) for item in args]))
             res = BuiltinClosure(fn = wrapper)
         return res
     elif isinstance(value, type):
-        return BuiltinClosure(fn = lambda *args: makeTable(value(*[makeTable(item) for item in args])))
+        return BuiltinClosure(fn = lambda *args: makeTable(value(*[makeObject(item) for item in args])))
+    elif isinstance(value, types.ModuleType):
+        res = Table({})
+        for item in dir(value):
+            if not item.startswith("_"):
+                attr_value = getattr(value, item)
+                if callable(attr_value):
+                    res.define(String(value = attr_value.__name__), makeTable(attr_value))
+                else:
+                    res.define(String(value = item), makeTable(attr_value))
+        return res
     else:
         # value is a class instance of some class
         res = Table({})
@@ -699,7 +709,7 @@ def makeTable(value: list | dict | str | int | bool | float | None | object) -> 
 
 def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | None:
     if isinstance(value, Number):
-        if int(value.value) == value.value: return int(value.value)
+        if value.value.is_integer(): return int(value.value)
         return value.value
     elif isinstance(value, String): return value.value.encode().decode("unicode_escape")
     elif isinstance(value, Underscore): return "_"

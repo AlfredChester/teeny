@@ -1,3 +1,4 @@
+import importlib
 from teeny.value import Env, Number, String, Table, Error, ValError, BuiltinClosure, \
                         makeTable, makeObject, Value, Nil, Closure, copy, isTruthy
 import math
@@ -260,8 +261,27 @@ Benchmark: Table = Table(value = {
     String(value = "measureMul"): BuiltinClosure(fn = measureMultiple)
 })
 
+def dynamicImport(file_path: str):
+    # Ensure the file exists
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    # Create a module name based on the file name (without extension)
+    module_name = os.path.basename(file_path).replace(".py", "")
+    # Load the module using importlib
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    # Execute the module
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module.getGlobal()
 cachedModules = {}
-def Import(name: String) -> Table:
+def Import(name: String, type: String = String(value = "teeny")) -> Table:
+    if type.value == "python":
+        mod = importlib.import_module(name.value)
+        return makeTable(mod)
+    elif type.value == "wrapper":
+        mod = dynamicImport(str(srcPath / (name.value + ".wrapper.py")))
+        return makeTable(mod)
     pth: str = srcPath / name.value
     gPth: str = globalPackagePath / name.value
     if not os.path.isfile(pth):
@@ -316,7 +336,9 @@ def makeGlobal() -> Env:
         "println": BuiltinClosure(fn = lambda *x: Print(*x, String(value = '\n'))),
         "input": BuiltinClosure(fn = lambda: String(value = input(""))),
         "export": Table(value = {}),
-        "import": BuiltinClosure(fn = Import),
+        "import": BuiltinClosure(fn = lambda x: Import(x)),
+        "importPython": BuiltinClosure(fn = lambda x: Import(x, String(value = "wrapper"))),
+        "importRaw": BuiltinClosure(fn = lambda x: Import(x, String(value = "python"))),
         "mix": BuiltinClosure(fn = Mix, hasEnv = True),
         "include": BuiltinClosure(fn = lambda name, env: Mix(Import(name), env), hasEnv = True),
         "range": BuiltinClosure(fn = lambda l, r, step = Number(value = 1): makeTable(list(range(int(l.value), int(r.value), int(step.value))))),
