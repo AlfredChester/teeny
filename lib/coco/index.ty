@@ -1,1 +1,4 @@
-# coco.ty
+## coco
+## A simple workflow framework
+
+include("./node.ty")

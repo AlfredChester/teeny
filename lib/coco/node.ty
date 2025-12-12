@@ -1,0 +1,16 @@
+## Node
+
+export["node"] = (name, f) => {
+    (args) => {
+        arg := args;
+        self := [
+            "_type_": "node",
+            "name": name,
+            "set": (a) => {
+                arg = a
+            },
+            "_call_": (a) => f(a, arg)
+        ];
+        self
+    }
+}
