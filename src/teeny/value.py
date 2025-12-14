@@ -137,6 +137,7 @@ class String(Value):
         self.register(String(value = "join", noConstruct = True), BuiltinClosure(fn = self.join))
         self.register(String(value = "format", noConstruct = True), BuiltinClosure(fn = self.format))
         self.register(String(value = "replace", noConstruct = True), BuiltinClosure(fn = self.replace))
+        self.register(String(value = "count", noConstruct = True), BuiltinClosure(fn = self.count))
 
     @requireType("add a non-String to a String")
     def __add__(self, rhs: "String") -> "String":
@@ -192,6 +193,8 @@ class String(Value):
     def trim(self) -> "String":
         return String(value = self.value.strip())
     def split(self, sep: "String") -> "Table":
+        if sep.value == "":
+            return makeTable(self.value.split())
         return makeTable(self.value.split(sep.value))
     def join(self, tab: "Table") -> "String":
         return String(value = self.value.join(makeObject(tab)))
@@ -206,13 +209,19 @@ class String(Value):
         except ValueError:
             res = Error(typ = "Runtime Error", value = "convert non-Number to Number")
         return res
-    def replace(self, rhs: "Regex", res: "String"):
+    def replace(self, rhs: "Regex", res: "String") -> "String":
         try:
             pattern = re.compile(rhs.value)
             replaced = pattern.sub(res.value, self.value)
         except Exception:
             replaced = self.value
         return String(value = replaced)
+    def count(self, rhs: "String") -> Number:
+        try:
+            cnt = self.value.count(rhs.value)
+        except Exception:
+            cnt = 0.0
+        return Number(value = float(cnt))
 
 @dataclass
 class Regex(Value):
@@ -269,6 +278,7 @@ class Table(Value):
         self.register(String(value = "get"), BuiltinClosure(fn = self.take))
         self.register(String(value = "defaultGet"), BuiltinClosure(fn = self.get))
         self.register(String(value = "len"), BuiltinClosure(fn = self.len))
+        self.register(String(value = "sub"), BuiltinClosure(fn = self.sub))
 
     def __add__(self, rhs: "Table") -> "Table":
         if self.get(String(value = "_add_")) != Nil():
@@ -452,6 +462,13 @@ class Table(Value):
         for pos, i in enumerate(l):
             tab = Table({}); tab.append(Number(value = pos)); tab.append(i)
             res.append(tab)
+        return res
+    def sub(self, l: Number, r: Number) -> "Table":
+        lpos = int(l.value); rpos = int(r.value)
+        llist = self.toList()[lpos:rpos + 1]
+        res = Table()
+        for item in llist:
+            res.append(item)
         return res
     def _iter_(self, val = [], kw = {}) -> Callable:
         # Default iterative protocol
@@ -710,6 +727,7 @@ def makeTable(value: list | dict | str | int | bool | float | None | object) -> 
 
 def makeObject(value: Value | dict | list) -> list | dict | str | int | bool | None:
     if isinstance(value, Number):
+        if isinstance(value.value, int): return value.value
         if value.value.is_integer(): return int(value.value)
         return value.value
     elif isinstance(value, String): return value.value.encode().decode("unicode_escape")

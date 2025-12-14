@@ -96,6 +96,9 @@ def parseString(src: str, pos: int, quoteChar: str):
     now = ""
     res = []
     flag = False
+    if src[pos] == quoteChar:
+        res.append(Token("STRING", "", 0, 0))
+        return res
     while src[pos] != quoteChar:
         if src[pos] == "{" and not flag:
             res.append(Token("STRING", now, 0, 0))
