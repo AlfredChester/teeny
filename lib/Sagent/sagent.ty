@@ -1,14 +1,71 @@
 include("./llm.ty");
 
+loadPrompt := (filePath) => {
+    fs.readText("./prompt/{filePath}")
+};
+
+tools := [    # All tools that agent can use
+    "Calculator": (expr) => {
+        return eval(expr)
+    },
+    "Plan": (goal) => {
+        llmInstance := llm();
+        llmInstance.addMessage("system", loadPrompt("PLANNER"));
+        llmInstance.addMessage("user", "make a plan for the goal: {goal}");
+        res := llmInstance.response();
+        res
+    },
+    "ReadFile": (filePath) => {
+        println("Reading from file: {filePath}");
+        fs.readText(filePath)
+    },
+    "WriteFile": (filePathAndContent) => {
+        println("Writing to file: {filePathAndContent['path']}");
+        filePath := filePathAndContent["path"];
+        content := filePathAndContent["content"];
+        fs.writeText(filePath, content);
+        nil
+    }
+];
 main := () => {
     llmInstance := llm();
+    llmInstance.addMessage("system", loadPrompt("SYSTEM"));
     while 1 {
         print(">>> ");
         rd := input();
         if rd == ":exit" {
             break;
         }
-        println(llmInstance.addMessage("user", rd).response())
+        rd = json.encode([
+            "type": "Message",
+            "data": rd
+        ])
+        res := ["type": "Init", "data": ""];
+        while res["type"] != "END" {
+            res := json.decode(llmInstance.addMessage("user", rd).response());
+            match res["type"] {
+                "Message": {
+                    print("Assistant: {res['data']}\n")
+                    rd = json.encode([
+                        "type": "Result",
+                        "data": nil
+                    ])
+                },
+                "END": {
+                    0
+                },
+                _: {
+                    toolRes := tools[res["type"]](res["data"]);
+                    rd = json.encode([
+                        "type": "Result",
+                        "data": toolRes
+                    ])
+                }
+            }
+            if res["type"] == "END" {
+                break
+            }
+        }
     }
 };
 

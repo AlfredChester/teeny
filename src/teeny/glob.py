@@ -328,6 +328,11 @@ def table(*args, **kwargs):
         res.append(i)
     return res
 
+def evaluate(code: String) -> Value:
+    from teeny.runner import run_code
+    res = run_code(code.value, print_each = False, print_res = False, is_file = False)
+    return res
+
 def makeGlobal() -> Env:
     gEnv = Env()
     gEnv.update({
@@ -356,6 +361,7 @@ def makeGlobal() -> Env:
         "string": BuiltinClosure(fn = lambda x: x.toString()),
         "number": BuiltinClosure(fn = lambda x: x.toNumber()),
         "table": BuiltinClosure(fn = table),
-        "bool": BuiltinClosure(fn = lambda x: isTruthy(x))
+        "bool": BuiltinClosure(fn = lambda x: isTruthy(x)),
+        "eval": BuiltinClosure(fn = evaluate)
     })
     return gEnv
