@@ -309,7 +309,7 @@ def Import(name: String, type: String = String(value = "teeny")) -> Table:
     if type.value == "python":
         mod = importlib.import_module(name.value)
         return makeTable(mod)
-    elif type.value == "wrapper" or name.value.find(".") == -1:
+    elif type.value == "wrapper":
         mod = dynamicImport(str(srcPath.parent.parent / "lib" / (name.value + ".wrapper.py")))
         return makeTable(mod)
     pth: str = srcPath / name.value
@@ -369,7 +369,7 @@ def makeGlobal() -> Env:
         "math": Math,
         "print": BuiltinClosure(fn = Print),
         "println": BuiltinClosure(fn = lambda *x: Print(*x, String(value = '\n'))),
-        "input": BuiltinClosure(fn = lambda: String(value = input(""))),
+        "input": BuiltinClosure(fn = lambda s = String(value = ""): String(value = input(s.value))),
         "export": Table(value = {}),
         "import": BuiltinClosure(fn = lambda x: Import(x)),
         "importPython": BuiltinClosure(fn = lambda x: Import(x, String(value = "wrapper"))),
