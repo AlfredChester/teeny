@@ -1,3 +1,0 @@
-Make a simple todo app in HTML, CSS and JS
-
-Write your code in ./todoapp/, the directory has been created

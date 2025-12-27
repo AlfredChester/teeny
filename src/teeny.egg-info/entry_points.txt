@@ -1,2 +1,0 @@
-[console_scripts]
-teeny = teeny.__main__:main
