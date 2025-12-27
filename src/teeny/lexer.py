@@ -7,6 +7,8 @@ TOKENS: list[tuple[str, str]] = [
     ("WS",          r"[ \t\r\n]+"),
     ("COMMENT",     r"#[^\n]*"),
 
+    ("INFIX",       r"<[A-Za-z_][A-Za-z0-9_]*>"),
+
     # multi-character operators (MUST come before shorter ones)
     ("DEFINE",      r":="),
     ("EQEQ",        r"=="),

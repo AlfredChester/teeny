@@ -454,6 +454,19 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
             rhs = interpret(ast.children[1], env, piped = lhs)
             return rhs
+        if ast.value.startswith("<") and ast.value.endswith(">"):
+            lhs = interpret(ast.children[0], env)
+            if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
+            rhs = interpret(ast.children[1], env)
+            if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
+            # For custom infix operators, we define them as functions in the environment
+            funcName = f"infix_{ast.value[1:-1]}"
+            func = env.read(funcName)
+            if isinstance(func, Error) or isinstance(func, Bubble):
+                return func
+            elif not callable(func):
+                return Error(typ = "Runtime Error", value = f"infix operator {ast.value} is not callable")
+            return func([lhs, rhs], [])
     elif ast.typ == "PREOP":
         if ast.value == "+":
             return interpret(ast.children[0], env)

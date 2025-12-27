@@ -3,6 +3,8 @@ from teeny.token import Token
 from teeny.exception import SyntaxError
 
 def infixOperators(op) -> list[int]:
+    if op.startswith("<") and op.endswith(">"):
+        return [13, 14]
     return {
         '=': [1, 2], ':=': [1, 2], '?=': [1, 2], '+=': [1, 2], '-=': [1, 2], '*=': [1, 2],
         '/=': [1, 2], '%=': [1, 2], '|>': [1, 2],
