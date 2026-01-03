@@ -1,5 +1,6 @@
-# Introduction
+# **Introduction**
 
-Welcome to Teeny Tutorial! This quickstart tutorial will introduce you to this language, and in the end you should be able to use it for writing day-to-day scripts
+This quickstart guide will introduce you to the core ideas and basic syntax of Teeny.
+By the end of this tutorial, you’ll be able to read and write Teeny scripts for everyday tasks — from simple calculations to data processing and automation.
 
-Go to the next page to know more about teeny!
+Let’s get started!

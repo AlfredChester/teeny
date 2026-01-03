@@ -188,10 +188,21 @@ class String(Value):
         else:
             return super().get(pos)
     def set(self, pos: Value, val: Value) -> Union["Error", "Nil"]:
-        if not isinstance(pos, Number) or not isinstance(val, String):
-            return Error(typ = "Runtime Error", value = "index string with non-Number")
-        v = list(self.value); v[int(pos.value)] = val.value
-        self.value = "".join(v)
+        if not isinstance(val, String):
+            return Error(typ = "Runtime Error", value = "set String with non-String")
+        if isinstance(pos, Number):
+            v = list(self.value); v[int(pos.value)] = val.value
+            self.value = "".join(v)
+        elif isinstance(pos, String):
+            self.value = self.value.replace(pos.value, val.value)
+        elif isinstance(pos, Regex):
+            pattern = re.compile(pos.value)
+            self.value = pattern.sub(val.value, self.value)
+        elif isinstance(pos, Table):
+            for p in range(pos.size):
+                self.set(pos.take(Number(value = p)), val)
+        else:
+            return Error(typ = "Runtime Error", value = "set String with invalid index")
         return Nil()
     
     def len(self) -> Number:
@@ -331,19 +342,35 @@ class Table(Value):
         if self.get(String(value = "_floordiv_")) != Nil():
             return self.get(String(value = "_floordiv_"))([rhs], {})
         return Error(typ = "Runtime Error", value = "floor divide Table with other")
-    def __eq__(self, rhs: "Value") -> Number:
+    def __eq__(self, rhs: "Value") -> Value:
         if self.get(String(value = "_eq_")) != Nil():
-            return Number(value = isTruthy(self.get(String(value = "_eq_"))([rhs], {})))
+            return Number(value = self.get(String(value = "_eq_"))([rhs], {}))
         if not isinstance(rhs, Table): return Number(value = 0)
         return Number(value = int(self.value == rhs.value))
     def __ne__(self, rhs: "Value") -> Number:
         if self.get(String(value = "_ne_")) != Nil():
-            return Number(value = isTruthy(self.get(String(value = "_ne_"))([rhs], {})))
-        elif self.get(String(value = "_eq_")) != Nil():
-            return not Number(value = isTruthy(self.get(String(value = "_eq_"))([rhs], {})))
+            return Number(value = self.get(String(value = "_ne_"))([rhs], {}))
         if not isinstance(rhs, Table): return Number(value = 1)
         return Number(value = int(self.value != rhs.value))
+    def __lt__(self, rhs: "Value") -> Value:
+        if self.get(String(value = "_lt_")) != Nil():
+            return self.get(String(value = "_lt_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "compare Table with other")
+    def __le__(self, rhs: "Value") -> Value:
+        if self.get(String(value = "_le_")) != Nil():
+            return self.get(String(value = "_le_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "compare Table with other")
+    def __gt__(self, rhs: "Value") -> Value:
+        if self.get(String(value = "_gt_")) != Nil():
+            return self.get(String(value = "_gt_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "compare Table with other")
+    def __ge__(self, rhs: "Value") -> Value:
+        if self.get(String(value = "_ge_")) != Nil():
+            return self.get(String(value = "_ge_"))([rhs], {})
+        return Error(typ = "Runtime Error", value = "compare Table with other")
     def __call__(self, value, kwarg) -> Value:
+        if self.get(String(value = "_call_")) == Nil():
+            return Error(typ = "Runtime Error", value = "call non-callable Table")
         return self.get(String(value = "_call_"))(value, kwarg)
     
     def len(self) -> Number:

@@ -46,7 +46,7 @@ Math: Table = Table(value = {
     String(value = "log2"): BuiltinClosure(fn = lambda x: Number(value = math.log2(x.value))),
     String(value = "hypot"): BuiltinClosure(fn = lambda *x: Number(value = math.hypot(*[i.value for i in x]))),
     String(value = "random"): BuiltinClosure(fn = lambda: Number(value = random.random())),
-    String(value = "uniform"): BuiltinClosure(fn = lambda a, b: Number(value = random.uniform(int(a.value), int(b.value)))),
+    String(value = "uniform"): BuiltinClosure(fn = lambda a, b: Number(value = random.uniform(a.value, b.value))),
     String(value = "randint"): BuiltinClosure(fn = lambda a, b: Number(value = random.randint(int(a.value), int(b.value)))),
     String(value = "clamp"): BuiltinClosure(fn = lambda a, mmin, mmax: max(mmin, min(a, mmax))),
     String(value = "lerp"): BuiltinClosure(fn = lambda a, b, t: a + (b - a) * t),

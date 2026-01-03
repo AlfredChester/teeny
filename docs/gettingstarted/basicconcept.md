@@ -1,38 +1,122 @@
-# Basic Concept
+# **Basic Concept**
 
-## Before anything
+## Before Anything
 
-Teeny takes great inspiration from Lua, Python and some other languages, so it's common to see similar concepts you might already know, but it's still greatly suggested that you should read the whole tutorial carefully, since Teeny might treat some specific cases different then you might expect.
+Teeny takes inspiration from **Lua, Python, and other expressive languages**. You’ll see familiar ideas if you know them, but Teeny has its own rules and expectations — so it’s recommended to read this tutorial carefully, even if some parts look familiar.
 
-## Expressions
+## Expressions Everywhere
 
-Teeny treat everything as expressions, and that includes `if`, `for`, etc., basically everything that might be a statement in other programming languages is an expression here.
+In Teeny, **everything is an expression**.
+That means constructs you may think of as “statements” in other languages — such as `if`, `for`, and code blocks — are all expressions with values.
 
-Teeny always try to find the longest expression possible, for example:
+Teeny always tries to parse the **longest valid expression** from the current position.
+
+For example:
+
 ```teeny
 a = 1
 [1]
 ```
-This looks like two expressions, but actually it's interpreted as:
+
+At first glance this seems like two separate lines — but without a semicolon, Teeny reads it like:
+
 ```teeny
-a = 1[1] // Wrong!
-```
-Which raises an error. Fortuanately, a semicolon marks an end for an expression, that means the following code works:
-```teeny
-a = 1; // Correct!
-[1]
+a = 1[1]  # tries to index literal 1 — error!
 ```
 
-## Data types
+To break expressions cleanly, use a semicolon (`;`):
 
-There're 5 data types in Teeny: Number, String, Table, Nil and Closure
+```teeny
+a = 1;   # now the expression ends
+[1]      # this is a separate expression
+```
 
-They probably work as you expect, but here're some reminders:
-1. Number is used for both integer and floating number, teeny doesn't make a difference between them
-2. Boolean technically isn't supported, but you always can rely on 1 for true and 0 for false
-3. Table, just like how lua's table work, is much stronger than typical list or dictionary, more on them later
-4. Closure is just function, and for the most part, a Closure and a callable Table isn't differenced
+## Data Types
 
-The operators in Teeny is fairly normal, beside some strange ones:
+Teeny currently has **five core data types**:
 
-1. The assignment and definition operator: Teeny makes a difference between assign a value to a variable and define a variable. The former is done through `=`, and the latter through `:=`
+* **Number** — numeric values (floating-point; integers are just special cases)
+* **String** — sequences of text
+* **Table** — flexible collections (like Lua’s tables; can act as lists, dictionaries, objects, etc.)
+* **Nil** — absence of value
+* **Closure** — functions
+
+Some notes on these:
+
+1. **Number** covers both integers and floating point — there is no separate integer type.
+2. **Boolean** is *not* a separate type — instead, truthiness is derived from values (see below).
+3. **Table** is a powerful, mutable structure — more than just a list or dictionary. We’ll cover more on tables later.
+4. **Closure** represents functions; a callable table can behave like a function too.
+
+### Truthiness
+
+Teeny doesn’t have a built-in Boolean type. Instead:
+
+* **Falsy values:** `0`, `""` (empty string), ``` `` ``` (empty regex) , `[]` (empty table), and `nil`
+* **Truthy values:** everything else
+
+This means you can write:
+
+```teeny
+if x {
+    println("x is truthy")
+}
+```
+
+with the same intuitive meaning as in languages with booleans.
+
+## Operators
+
+Most operators in Teeny will feel familiar:
+
+```
++  -  *  /  %   &&  ||  ==  !=  <=  >=  <  >
+```
+
+But there are some special ones you’ll see later:
+
+* `??` — nil coalescing
+
+  ```teeny
+  a ?? b  # if a isn’t nil then a, else b
+  ```
+* `?:` — truthy coalescing
+
+  ```teeny
+  a ?: b  # if a is truthy then a, else b
+  ```
+* `=~` — regex match
+
+  ```teeny
+  "123" =~ `\d+`  # returns 1 if match, else 0
+  ```
+* `|>` — pipeline operator. It's worth its own part, more on it later
+
+  ```teeny
+  x |> f |> g
+  ```
+
+## Assignment vs Definition
+
+Teeny makes a clear distinction between **defining** a new variable and **assigning** to an existing variable:
+
+* **Define a variable:**
+
+  ```teeny
+  name := "Alice"
+  ```
+
+  If `name` didn’t exist in current scope, it’s created in the current scope.
+
+* **Assign to a variable:**
+
+  ```teeny
+  name = "Bob"
+  ```
+
+  If `name` already exists in some outer scope(possibly current scope), this changes its value.
+
+If you try to assign to a variable that hasn’t been defined yet, Teeny will raise an error — so always use `:=` when introducing a new name. And if you try to define a new variable that already existed in current scope, Teeny will also raise an error.
+
+That covers the core ideas you’ll need to start writing basic Teeny code.
+Next up: **Tables**

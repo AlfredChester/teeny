@@ -1,29 +1,169 @@
-# Table
+# **Table**
 
-Table is very flexible and strong in teeny.
+Tables are one of the most flexible and powerful types in Teeny.
+They act as arrays, dictionaries (maps), objects, or any combination of these — all in one structure.
 
-## Basic Usage
+## **Constructing Tables**
 
-Use `[]` to construct a table, for example:
-`[1, 2, 3, key: "value"]`
-The `key: "value"` part creates a `key-value pair`, it's basically how dictionary in python works, but it supports ALL data types in teeny to be the key, code such as: `[1, 2, 3, [1, 2]: [1, 2, 3]]` totally works!
+Use square brackets `[]` to create a table:
 
-## Structural assignment
-
-It's technically not a table feature, rather a syntactic sugar. Sometimes you might want to unpack a table to different variables, like this:
 ```teeny
-a := [1, 2];
-b := a[0];
-c := a[1];
+t := [1, 2, 3, key: "value"]
 ```
-But it's tedious to do, so structural assignment is born:
+
+* Elements without keys are stored sequentially (like a list).
+* Elements with `key: value` are stored by key (like a dictionary).
+* **Any value** can be a key — not just numbers or strings.
+
+Examples:
+
 ```teeny
-a := [1, 2];
-[b, c] := a;
+# table with numeric and complex keys
+t := [1, 2, 3, [1,2]: [1,2,3]]
 ```
-It's also possible to do more complex structural assignment:
+
+In this example:
+
+* `t[0] == 1`
+* `t[1] == 2`
+* `t[2] == 3`
+* `t[[1,2]] == [1,2,3]`
+
+## **Structural Assignment**
+
+Sometimes you want to unpack a table into variables.
+Instead of assigning each element manually:
+
 ```teeny
-a := [1, [2, 3]];
-[b, [c, d]] := a;
+a := [1, 2]
+b := a[0]
+c := a[1]
 ```
-This is also possible to be used in for loops, more on that later
+
+You can use structural assignment:
+
+```teeny
+a := [1, 2]
+[b, c] := a
+```
+
+This assigns:
+
+* `b = 1`
+* `c = 2`
+
+Structural assignment can match nested tables:
+
+```teeny
+a := [1, [2, 3]]
+[b, [c, d]] := a
+```
+
+Here:
+
+* `b = 1`
+* `c = 2`
+* `d = 3`
+
+Structural assignment also works in `for` loops to destructure table elements — covered later.
+
+It can also be more complex
+
+```teeny
+[data: a, config, c] := [
+    "Some other stuff",
+    config: "Some super cool config",
+    data: [
+        "Some super important data"
+    ]
+]
+```
+
+Here:
+
+- `a = [ "Some super important data" ]`
+- `config = "Some super cool config"`
+- `c = "Some other stuff"`
+
+Basically:
+
+- If the left part has a key-value pair: find the same key in the right part, if doesn't exist, raise an Error
+- If the left part only has a name, first try find the exact same name as key in the right part, if doesn't exist, pull out the next available numeric-key value(i.e. the one created without any key before it), if also doesn't exist, raise an Error
+
+## **Table Methods**
+
+Tables come with many useful builtin methods. These methods can be called using the dot syntax:
+
+```teeny
+t.push(4)     # append a value
+t.keys()      # return a list of keys
+t.values()    # return a list of values
+```
+
+Below is a summary of available table methods:
+
+### Basic Operations
+
+| Method        | Description                                                    |
+| ------------- | -----------------------------------                            |
+| `push(value)` | Append `value` to the table                                    |
+| `keys()`      | Get a list of all keys                                         |
+| `values()`    | Get a list of all values                                       |
+| `enumerate()` | Get a list, each key is [index, value], only numeric index     |
+| `pairs()`     | Iterable key‑value iterator, only non-numeric index            |
+| `has(key)`    | Check if `key` exists in table                                 |
+
+### Aggregation & Statistics
+
+These return new tables with results:
+
+| Method       | Description                          |
+| ------------ | ------------------------------------ |
+| `sum()`      | Return the sum of all values         |
+| `mean()`     | Return the average of all values     |
+| `median()`   | Return the median                    |
+| `stdev()`    | Return the standard deviation        |
+| `describe()` | Return a summary of statistics       |
+
+Examples:
+
+```teeny
+nums := [1, 2, 3, 4]
+println(nums.sum())      # 10
+println(nums.mean())     # 2.5
+```
+
+### Transformations
+
+| Method       | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| `map(fn)`    | Return a new table by applying `fn` to each element          |
+| `filter(fn)` | Return a new table of elements where `fn(element)` is truthy |
+| `sort()`     | Sort table values in place                                   |
+
+Examples:
+
+```teeny
+nums := [3, 1, 2]
+sorted := nums.sort()
+println(sorted)    # [1, 2, 3]
+
+# doubling all values
+doubled := nums.map(x => x * 2)
+println(doubled)   # [2, 4, 6]
+```
+
+### Size & Slicing
+
+| Method      | Description                                                                         |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `len()`     | Return the number of elements                                                       |
+| `sub(i, j)` | Return a slice from index `i` to `j`, inclusive on both side                        |
+
+Examples:
+
+```teeny
+data := [10, 20, 30, 40]
+println(data.len())      # 4
+println(data.sub(1, 3))   # [20, 30, 40]
+```
