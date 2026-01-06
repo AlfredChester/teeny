@@ -210,7 +210,7 @@ class String(Value):
     def len(self) -> Number:
         return Number(value = len(self.value))
     def slice(self, l: Number, r: Number) -> "String":
-        return String(value = self.value[int(l.value):int(r.value) + 1])
+        return String(value = self.value[int(l.value):int(r.value)])
     def find(self, sub: "String") -> Number:
         return Number(value = self.value.find(sub.value))
     def upper(self) -> "String":
@@ -522,7 +522,7 @@ class Table(Value):
         return res
     def sub(self, l: Number, r: Number) -> "Table":
         lpos = int(l.value); rpos = int(r.value)
-        llist = self.toList()[lpos:rpos + 1]
+        llist = self.toList()[lpos:rpos]
         res = Table()
         for item in llist:
             res.append(item)
