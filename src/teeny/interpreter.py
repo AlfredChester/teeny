@@ -449,7 +449,11 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
         if ast.value == "|>":
             lhs = interpret(ast.children[0], env)
             if isinstance(lhs, Error) or isinstance(lhs, Bubble): return lhs
-            rhs = interpret(ast.children[1], env, piped = lhs)
+            if ast.children[1].typ == "CALL": rhs = interpret(ast.children[1], env, piped = lhs)
+            else:
+                rhs = interpret(ast.children[1], env)
+                if isinstance(rhs, Error) or isinstance(rhs, Bubble): return rhs
+                return rhs([lhs], [])
             return rhs
         if ast.value.startswith("<") and ast.value.endswith(">"):
             lhs = interpret(ast.children[0], env)

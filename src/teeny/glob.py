@@ -287,6 +287,25 @@ Func: Table = Table(value = {
     String(value = "compose"): BuiltinClosure(fn = Compose)
 })
 
+def filter(table: Table, func: Value) -> Table:
+    return table.get(String(value = "filter"))([func], [])
+def map(table: Table, func: Value) -> Table:
+    return table.get(String(value = "map"))([func], [])
+def reduce(table: Table, func: Value, initial: Value) -> Value:
+    return table.get(String(value = "reduce"))([func, initial], [])
+def table(*args, **kwargs):
+    res = Table()
+    res.value = {String(value = k): kwargs[k] for k in kwargs.keys()}
+    for i in args:
+        res.append(i)
+    return res
+Tab: Table = Table(value = {
+    String(value = "_call_"): BuiltinClosure(fn = table),
+    String(value = "filter"): BuiltinClosure(fn = filter),
+    String(value = "map"): BuiltinClosure(fn = map),
+    String(value = "reduce"): BuiltinClosure(fn = reduce)
+})
+
 def measure(fn: Value) -> Number | Error:
     st = time.time()
     res = fn([], [])
@@ -395,13 +414,6 @@ def Print(*x) -> Nil:
         return Error({}, typ = "IOError", value = str(e))
     return Nil()
 
-def table(*args, **kwargs):
-    res = Table()
-    res.value = {String(value = k): kwargs[k] for k in kwargs.keys()}
-    for i in args:
-        res.append(i)
-    return res
-
 def evaluate(code: String, env: Table = Table()) -> Value:
     envObj = makeGlobal(); Mix(env, envObj)
     from teeny.runner import run_code
@@ -424,6 +436,7 @@ def makeGlobal() -> Env:
         "range": BuiltinClosure(fn = lambda l, r, step = Number(value = 1): makeTable(list(range(int(l.value), int(r.value), int(step.value))))),
         "error": Err,
         "fs": Fs,
+        "table": Tab,
         "json": Json,
         "http": Http,
         "os": Os,
@@ -436,7 +449,6 @@ def makeGlobal() -> Env:
         "copy": BuiltinClosure(fn = copy),
         "string": BuiltinClosure(fn = lambda x: x.toString()),
         "number": BuiltinClosure(fn = lambda x: x.toNumber()),
-        "table": BuiltinClosure(fn = table),
         "bool": BuiltinClosure(fn = lambda x: isTruthy(x)),
         "eval": BuiltinClosure(fn = evaluate)
     })

@@ -221,9 +221,11 @@ class String(Value):
         return String(value = self.value.capitalize())
     def trim(self) -> "String":
         return String(value = self.value.strip())
-    def split(self, sep: "String") -> "Table":
-        if sep.value == "":
+    def split(self, sep: Value) -> "Table":
+        if sep == Nil():
             return makeTable(self.value.split())
+        elif sep == String(value = ""):
+            return makeTable([c for c in self.value])
         return makeTable(self.value.split(sep.value))
     def join(self, tab: "Table") -> "String":
         return String(value = self.value.join(makeObject(tab)))
@@ -313,6 +315,7 @@ class Table(Value):
         self.register(String(value = "map"), BuiltinClosure(fn = self.map))
         self.register(String(value = "sort"), BuiltinClosure(fn = lambda: self.sort()))
         self.register(String(value = "filter"), BuiltinClosure(fn = self.filter))
+        self.register(String(value = "reduce"), BuiltinClosure(fn = self.reduce))
         self.register(String(value = "_iter_"), BuiltinClosure(fn = self._iter_))
         self.register(String(value = "set"), BuiltinClosure(fn = self.set))
         self.register(String(value = "define"), BuiltinClosure(fn = self.define))
@@ -453,6 +456,14 @@ class Table(Value):
             if isTruthy(fn([d.get(k), k], {})):
                 res.define(k, d.get(k))
         return res
+    def reduce(self, fn: Value, initial: Value) -> Value:
+        acc = initial
+        l = self.toList(); d = self.toDict()
+        for p, v in enumerate(l):
+            acc = fn([acc, v, Number(value = p)], {})
+        for k in d.keys():
+            acc = fn([acc, d.get(k), k], {})
+        return acc
     def sum(self) -> float:
         return sum(self.toList(), Number(value = 0)).value
     def mean(self) -> float:
