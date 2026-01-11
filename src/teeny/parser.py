@@ -118,9 +118,15 @@ def parse(tokens: list[Token], p = 0, minBp = 0) -> list[AST | int]:
         p = advance(tokens, p, "LSQPAREN")
         children = []
         while tokens[p].typ != "RSQPAREN":
+            if tokens[p].typ == "COLON":
+                p = advance(tokens, p, "COLON")
+                rhs, p = parse(tokens, p, 0)
+                children.append(AST("PAIR", [rhs]))
+                if tokens[p].typ == "COMMA": p += 1
+                continue
             rhs, p = parse(tokens, p, 0)
             children.append(rhs)
-            if tokens[p].typ == "COMMA": p += 1
+            if tokens[p].typ == "COMMA": p = advance(tokens, p, "COMMA")
             elif tokens[p].typ == "COLON":
                 p += 1
                 rhs, p = parse(tokens, p, 0)

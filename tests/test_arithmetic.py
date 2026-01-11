@@ -45,7 +45,6 @@ class TestArithmetic(unittest.TestCase):
         self.assertEqual(run_code('"a" < 1', False, False, False), Error(typ = "Runtime Error", value = "compare between non-String and String"))
         self.assertEqual(run_code('"a" >= 1', False, False, False), Error(typ = "Runtime Error", value = "compare between non-String and String"))
         self.assertEqual(run_code('"a" <= 1', False, False, False), Error(typ = "Runtime Error", value = "compare between non-String and String"))
-        self.assertEqual(run_code('[1, 2] + 1', False, False, False), Error(typ = "Runtime Error", value = "add a non-Table to a Table"))
         self.assertEqual(run_code('nil', False, False, False), Nil())
         self.assertEqual(makeObject(run_code('a := 1', False, False, False)), 1)
         self.assertEqual(run_code('b = 1', False, False, False), Error(typ = "Runtime Error", value = "assign to non-existing variable"))

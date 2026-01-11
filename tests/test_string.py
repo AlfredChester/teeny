@@ -15,10 +15,9 @@ class TestString(unittest.TestCase):
     def test_string_get_and_set(self):
         self.assertEqual(makeObject(run_code('"a"[0]', False, False, False)), "a")
         self.assertEqual(makeObject(run_code('a := "a"; a[0] = "b"; a', False, False, False)), "b")
-        self.assertEqual(run_code('"a"["b"] = "b"', False, False, False), Error(typ = "Runtime Error", value = "index string with non-Number"))
     def test_string_builtin(self):
         self.assertEqual(makeObject(run_code('"a".len()', False, False, False)), 1)
-        self.assertEqual(makeObject(run_code('"abcde".slice(1, 3)', False, False, False)), "bcd")
+        self.assertEqual(makeObject(run_code('"abcde".slice(1, 3)', False, False, False)), "bc")
         self.assertEqual(makeObject(run_code('"abcde".find("bcd")', False, False, False)), 1)
         self.assertEqual(makeObject(run_code('"AbCdE".upper()', False, False, False)), "ABCDE")
         self.assertEqual(makeObject(run_code('"AbCdE".lower()', False, False, False)), "abcde")

@@ -102,9 +102,14 @@ def interpret(ast: AST, env: Env = makeGlobal(), **kwargs) -> Value:
             if c.typ == "PAIR":
                 # c.children[0] is guareenteed a NAME or a VALUE
                 if c.children[0].typ == "NAME":
-                    val = interpret(c.children[1], env)
-                    if isinstance(val, Error) or isinstance(val, Bubble): return val
-                    value.update({String(value = c.children[0].value): val})
+                    if len(c.children) == 1:
+                        val = interpret(c.children[0], env)
+                        if isinstance(val, Error) or isinstance(val, Bubble): return val
+                        value.update({String(value = c.children[0].value): val})
+                    else:
+                        val = interpret(c.children[1], env)
+                        if isinstance(val, Error) or isinstance(val, Bubble): return val
+                        value.update({String(value = c.children[0].value): val})
                 else:
                     key = interpret(c.children[0], env)
                     if isinstance(key, Error) or isinstance(key, Bubble): return key

@@ -273,6 +273,8 @@ class Regex(Value):
     def __post_init__(self) -> None:
         super().__post_init__()
         self.register(String(value = "find", noConstruct = True), BuiltinClosure(fn = self.find))
+    def __hash__(self):
+        return self.value.__hash__()
     def match(self, rhs: String) -> Number:
         try:
             pattern = re.compile(self.value)

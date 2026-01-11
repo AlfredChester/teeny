@@ -40,6 +40,8 @@ class TestTable(unittest.TestCase):
             "median": 2,
             "stdev": 0.816496580927726
         })
+        self.assertEqual(makeObject(run_code('[1, 2, 3].len()', False, False, False)), 3)
+        self.assertEqual(makeObject(run_code('a := 1; [:a]', False, False, False)), {'a': 1})
 
 if __name__ == "__main__":
     unittest.main()
