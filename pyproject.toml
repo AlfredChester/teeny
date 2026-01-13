@@ -9,6 +9,9 @@ description = "A tiny programming language"
 authors = [{ name = "Ian", email = "Ian.ye01@outlook.com" }]
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "requests",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
