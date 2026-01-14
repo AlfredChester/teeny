@@ -323,6 +323,7 @@ class Table(Value):
         self.register(String(value = "defaultGet"), BuiltinClosure(fn = self.get))
         self.register(String(value = "len"), BuiltinClosure(fn = self.len))
         self.register(String(value = "sub"), BuiltinClosure(fn = self.sub))
+        self.register(String(value = "shuffle"), BuiltinClosure(fn = self.shuffle))
 
     def __add__(self, rhs: "Table") -> "Table":
         if self.get(String(value = "_add_")) != Nil():
@@ -538,6 +539,14 @@ class Table(Value):
         for item in llist:
             res.append(item)
         return res
+    def shuffle(self) -> "Table":
+        import random
+        l = self.toList()
+        random.shuffle(l)
+        res = Table()
+        for item in l:
+            res.append(item)
+        return res
     def _iter_(self, val = [], kw = {}) -> Callable:
         # Default iterative protocol
         cur = 0
@@ -694,6 +703,14 @@ class Nil(Value):
         return String(value = "nil")
     def toNumber(self) -> "Number":
         return Error(typ = "Runtime Error", value = "convert non-Number to Number")
+    def __eq__(self, rhs) -> Number:
+        if not isinstance(rhs, Nil):
+            return Number(value = 0)
+        return Number(value = 1)
+    def __ne__(self, rhs) -> Number:
+        if not isinstance(rhs, Nil):
+            return Number(value = 1)
+        return Number(value = 0)
 
 @dataclass
 class BuiltinClosure(Value):
