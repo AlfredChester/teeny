@@ -15,6 +15,8 @@ import functools
 import statistics
 from collections.abc import Callable
 import sqlite3
+from rich import print as rprint
+from rich.markdown import Markdown
 
 srcPath: Path = Path(sys.argv[1] if len(sys.argv) >= 2 else __file__).parent
 globalPackagePath: Path = Path(__file__).parent.parent.parent / "lib"
@@ -426,6 +428,7 @@ def makeGlobal() -> Env:
         "math": Math,
         "print": BuiltinClosure(fn = Print),
         "println": BuiltinClosure(fn = lambda *x: Print(*x, String(value = '\n'))),
+        "printmd": BuiltinClosure(fn = lambda *x: rprint(Markdown(' '.join([i.toString().value for i in x])))),
         "input": BuiltinClosure(fn = lambda s = String(value = ""): String(value = input(s.value))),
         "export": Table(value = {}),
         "import": BuiltinClosure(fn = lambda x: Import(x)),
